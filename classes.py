@@ -8,9 +8,9 @@ from scipy.stats import chi2
 import functies
 import numbers
 from IPython.display import display
-#kaas is lekker
 
-class vergelijking():
+
+class vergelijking:
     def __init__(self, sympy_formule, parameters = None, constants = None):
         self.formule = sympy_formule
         if parameters == None and constants == None:
@@ -171,11 +171,12 @@ class vergelijking():
     ################
     #### Fitten ####
     ################
-    def fit_dataset(self, dataset):
-        pass
+    def fit_dataset(self, dataset, model, initial_vals):
+        # initial vals is v.d. vorm [(val, name)]
+        return functies.fit_model(model, dataset, initial_vals)
         
 
-class datapunt():
+class datapunt:
     def __init__(self, waarde, fout, variabele, verdeling = "Normaal"):
         #Fout is wat we geven als \pm, voor uniform kan ook (resolutie, nauwkeurigheid)
         self.waarde = waarde
@@ -204,11 +205,11 @@ class datapunt():
     def get_variance(self):
         return self.variance
     
-class meting():
+class meting:
     def __init__(self):
         pass
 
-class dataset():
+class dataset:
     def __init__(self, punten, fouten, namen, verdelingen):
        """
        punten = Matrix (np array) van datapunten

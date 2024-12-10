@@ -1,8 +1,10 @@
+from os import error
 import numpy as np
+from sphinx import ret
 import sympy as sp
 import sympy.stats as stats
 from matplotlib import pyplot as plt
-from scipy.optimize import minimize, fsolve
+from scipy.optimize import minimize, fsolve, root_scalar
 from scipy.stats import chi2
 import classes
 from IPython.display import display
@@ -222,50 +224,177 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
 
 
 ########## Fit code - 2D ###########
-def chi2_bereken(param, x_val, y_val,x_err,  y_err, soort_fout_x, soort_fout_y, model):
+def  chi2_bereken_2D(hybrid, x_val, y_val, x_variance, y_variance, model, n_param):
     """Geeft chi^2 waarde in functie van de parameters
     
     Args: 
-        param: Waardes voor de parameters van het model
+        hybrid: combinatie van param en x_guesses
+            param: Waardes voor de parameters van het model
+            x_guesses: Nog "parameter" waardes, zie demming regression op wikipedia
         model: Het gebruikte model dat gefit wordt
         x_val: Een vector van invoerwaardes voor het model
         y_val: Een vector met meetwaardes die gefit moeten worden
         y_err: Een vector met de fouten op y
+        x_err: Een vector met de fouten op x
         
     Return:
         chi_2_val: De chi^2 waarde van het model gegeven de waardes voor de parameters uit param.
         
     """
-    if soort_fout_x == "Unif":
-        fouten = y_err**2 / 12
-    else:
-        fouten = y_err**2
-    chi_2_val = np.sum((y_val - model(x_val, param))**2 / fouten)
+    param = hybrid[:n_param]
+    x_guesses = hybrid[n_param: ]
+    x_diffs = ((x_val - x_guesses)**2)/x_variance
+    y_diffs = ((y_val - model(x_guesses, param))**2)/y_variance
+
+    chi_2_val = np.sum(x_diffs + y_diffs)
     return chi_2_val
+
+def initial_vals_2D(x_val, y_val, initial_vals):
+    param_initials = initial_vals(x_val, y_val)
+    guess_initials = x_val
+    outp = np.concatenate(param_initials, x_val)
+    return outp
+
+def minimize_chi2_2D(model, initial_vals, x_val, y_val, y_variance, x_variance, n_param):
+    """Minimaliseert de chi^2 waarde voor een gegeven model en een aantal datapunten
+    
+    Args:
+        model: Het gebruikte model dat gefit wordt.
+        x_val: Een vector van invoerwaardes voor het model
+        y_val: Een vector met meetwaardes die gefit moeten worden
+        y_err: Een vector met de fouten op y
+        soort_fout: Laat toe om het type fout mee te geven, dit is enkel van belang als de fout op de meetpunten uniform is.
+                    
+    Return:
+        oplossing: Een array dat de minimale waardes voor de parameters geeft
+    """
+    chi2_func = lambda *args: chi2_bereken_2D(*args)
+    gok = initial_vals_2D(x_val, y_val, n_param, initial_vals)
+    mini = minimize(chi2_func, gok, args = (x_val, y_val,x_variance, y_variance, model, n_param))
+    return mini
+
+def chi2_in_1_var_2D(var, ind_var, x_val, y_val, x_variance, y_variance, hybrid, chi_min, model, n_param):
+    try:
+        some_object_iterator = iter(var)
+        outp = np.array([])
+        display(var)
+        for val in var: #Laat deze functie een vector gebruiken voor var i.p.v. slechts 1 waarde.
+            #Deze regel dient om de referentie semantiek van lijsten te omzeilen. Zonder dit wordt de vector param_values globaal aangepast
+            kopie = np.copy(hybrid)
+             #De waarde van var wordt op de juiste index ingevuld in de parameter vector.
+            np.put(kopie, ind_var, val)
+            outp = np.append(outp, chi2_bereken_2D(var, x_val, y_val, x_variance, y_variance, model, n_param) - chi2.ppf(0.68, df=n_param) - chi_min)
+        return outp
+    except TypeError as te:
+        kopie = np.copy(hybrid)
+        #De waarde van var wordt op de juiste index ingevuld in de parameter vector.
+        np.put(kopie, ind_var, var)
+        outp = chi2_bereken_2D(var, x_val, y_val, x_variance, y_variance, model, n_param) - chi2.ppf(0.68, df=n_param) - chi_min
+        return outp
+
+def find_sigma_values_2D(x_val, y_val, x_variance,  y_variance, hybrid, te_checken_param_ind, chi_min, model, n_param):
+    functie = lambda *args: chi2_in_1_var(*args)
+    gok = hybrid[te_checken_param_ind]
+    #De snijpunten met de 1\sigma hypercontour van de chi^2_mu verdeling zullen rond de best fittende waardes liggen
+    i = 0.1
+    terminate = False
+    while i<=2 and not terminate:
+        #scipy.optimize.fsolve vindt de nulpunten van de gegeven functie, chi2_in_1_var is gedefinieerd zodat de gezochte boven
+        #en ondergrenzen van het BI precies de nulpunten zijn.
+        #Om de bovengrens te vinden wordt een initiële waarde boven de best fittende waarde genomen, omgekeerd voor de ondergrens.
+        try:
+            sol_left = root_scalar(functie, args = (te_checken_param_ind, x_val, y_val, x_variance, y_variance, hybrid, chi_min, model, n_param), method = "brentq", bracket = [gok*(1-i), gok], x0 = gok, x1 = (1-i)*gok)
+            sol_right = root_scalar(functie, args = (te_checken_param_ind, x_val, y_val, x_variance, y_variance, hybrid, chi_min, model, n_param), method = "brentq", bracket = [gok, gok*(1+i)], x0 = gok, x1 = (1+i)*gok)
+            return [sol_left.root, sol_right.root]
+        except:
+            if i != 2:
+                i+=0.1
+            else:
+                terminate = True
+                print("Geen fout gevonden in 200% foutenmarge")
+                return [0, 0]
+
+def uncertainty_intervals_2D(min_hybrid, x_val, y_val, x_variance, y_variance,  chi_min, model, n_param):
+    intervallen = []
+    for i in range(0, n_param):
+        intervallen.append(find_sigma_values_2D(x_val, y_val, x_variance, y_variance, min_hybrid, i, chi_min, model, n_param))
+    return intervallen
+
+def jackknife_errors():
+    pass
+def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance, 
+        x_as_titel = "X-as", y_as_titel = "Y-as", titel = "Fit", error_method = "Old", detailed_logs = False): #Veel van deze inputs doen niets, kmoet nog pretty
+    #print code schrijven
+    #TODO: cas_matrix support maken
+    #TODO: ML code schrijven
+    n_param = len(parameters)
+    print("Raw output")
+    mini = minimize_chi2_2D(model, initial_vals, x_val, y_val, y_variance, x_variance, n_param)
+    chi_min = mini["fun"]
+    min_hybrid = mini["x"]
+    min_param = min_hybrid[:n_param]
+    if detailed_logs: 
+        print(mini)
+    
+    if error_method == "Old":
+        betrouwb_int = uncertainty_intervals_2D(min_hybrid, x_val, y_val, x_variance, y_variance, chi_min, model, n_param)
+        print(betrouwb_int)
+        foutjes = []
+        for i in range(0, n_param):
+            top = betrouwb_int[i][1] - min_param[i]
+            bot = min_param[i] - betrouwb_int[i][0]
+            foutjes.append((bot, top))
+            outp = parameters[i] + " heeft als waarde: %.5g + %.5g - %.5g met 68%% betrouwbaarheidsinterval: [%.5g, %.5g] "%(min_param[i], top, bot, betrouwb_int[i][0], betrouwb_int[i][1])
+            print(outp)
+
+        nu = len(x_val) - n_param
+        p_waarde = chi2.sf(chi_min, df=nu)
+        chi_red = chi_min/nu
+        print("De p-waarde voor de hypothese test dat het model zinvol is, wordt gegeven door: %.5g"%p_waarde)
+        print("De gereduceerde chi^2 waarde is: %.5g"%chi_red)
+        fouten = []
+        for fout in foutjes:
+            if fout[0]/fout[1] < 1.25 and fout[0]/fout[1] > 0.8:
+                fouten.append(max(fout[0], fout[1]))
+            else:
+                fouten.append(fout)
+        outp = []
+        for i in range(0, len(parameters)):
+            outp.append([min_param[i], fouten[i], 'S'])
+        return outp
+    elif error_method == "Jackknife":
+        pass
+    else:
+        print("Given error method not yet implemented, try ""Jackknife"" instead.")
+    #Werkt nog niet, kmoet de code nog algemeen schrijven :(
+    #if printen:
+    #    print("##################### Pretty print #####################")
+    #    pretty_print_results(x_val, y_val, y_err, chi_min, min_param, betrouwb_int, parameters)
+
 ########## stat ############
 
 def normaaltest(hypothese, gemeten): #gemeten is [mu, sigma] merk op dat sigma de steekproefstand.afwijking is!
     Zscore = (hypothese-gemeten[0])/gemeten[1]
-    Z = sympy.stats.Normal('Z', 0,1)
+    Z = sp.stats.Normal('Z', 0,1)
     if Zscore >0:
-        return 2*sympy.stats.P(Z > Zscore)
+        return 2*sp.stats.P(Z > Zscore)
     else:
-        return 2*sympy.stats.P(Z < Zscore)
+        return 2*sp.stats.P(Z < Zscore)
 
 def Ttest(hypothese, gemeten, vrijheidsgraden):
     Zscore = (hypothese-gemeten[0])/gemeten[1]
-    Z = sympy.stats.StudentT('Z', vrijheidsgraden)
+    Z = sp.stats.StudentT('Z', vrijheidsgraden)
     if Zscore >0:
-        return 2*sympy.stats.P(Z > Zscore)
+        return 2*sp.stats.P(Z > Zscore)
     else:
-        return 2*sympy.stats.P(Z < Zscore)    
+        return 2*sp.stats.P(Z < Zscore)    
 
 def test_sigma1issigma2(sigma1,sigma2, n1, n2, p_waarde = 0.05, return_p = False):
     sigmamax = max(sigma1, sigma2)
     sigmamin = min(sigma1, sigma2)
     Fvalue = sigmamax**2/sigmamin**2 #altijd >= 1
-    F = sympy.stats.FDistribution('F',n1-1,n2-1)
-    kans = 2*sympy.stats.P(F > Fvalue)
+    F = sp.stats.FDistribution('F',n1-1,n2-1)
+    kans = 2*sp.stats.P(F > Fvalue)
     kans = kans.evalf()
     if return_p:
         return kans
@@ -287,10 +416,10 @@ def test_mu1ismu2(meting1, meting2, n1, n2, p_waarde = 0.05, return_p = False, c
         print('T = ', end = ' ')
         print(Twaarde)
         if n1 + n2 -2 < cutoff_normaal:
-            T = sympy.stats.StudentT('T',n1+n2-2)
+            T = sp.stats.StudentT('T',n1+n2-2)
         else: #dat ding kan niet rekenen met te veel vrijheidsgraden in de T-test
-            T = sympy.stats.Normal('T',0, 1)
-        kans = 2*sympy.stats.P(T > Twaarde)
+            T = sp.stats.Normal('T',0, 1)
+        kans = 2*sp.stats.P(T > Twaarde)
         print('p =',end = ' ')
         kans = kans.evalf()
         print(kans)
@@ -304,11 +433,11 @@ def test_mu1ismu2(meting1, meting2, n1, n2, p_waarde = 0.05, return_p = False, c
         print(r)
         if r < cutoff_normaal:
             r = sp.floor(r)
-            T = sympy.stats.StudentT('T',r)
+            T = sp.stats.StudentT('T',r)
         else: #dat ding kan niet rekenen met te veel vrijheidsgraden in de T-test
-            T = sympy.stats.Normal('T',0, 1)
+            T = sp.stats.Normal('T',0, 1)
         print('T = ',end = ' ');print(Twaarde)
-        kans = 2*sympy.stats.P(T > Twaarde)
+        kans = 2*sp.stats.P(T > Twaarde)
         print('p = ',end = ' ')
         kans = kans.evalf()
         print(kans)
@@ -419,4 +548,38 @@ def matrix_to_datapunten(matrix, variabele):
     for vector in matrix:
         datapunten.append(vector_to_datapunt(vector, variabele).copy())
     return datapunten
+
+def same_order(to_order, guide):
+    if len(to_order) != len(guide):
+        raise Exception("Lengtes moeten gelijk zijn.")
+    order_names = set()
+    guide_names = set()
+    if type(guide[0]) == tuple:
+        for i in range(len(guide)):
+            order_names.add(to_order[i][1])
+            guide_names.add(guide[i][1])
+        if order_names != guide_names:
+            raise Exception("Namen niet allemaal gelijk.")
+        help_array = np.zeros(len(guide))
+        for i in range(len(guide)):
+            ind = [k for k in range(len(guide)) if guide[k][1] == to_order[i][1]]
+            if len(ind) !=1:
+                raise Exception("Elke naam hoort slechts eenmaal voor te komen.")
+            help_array[ind] = to_order[i]
+    elif type(guide[0]) == str or type(guide[0]) == sp.symbols:
+        for i in range(len(guide)):
+            order_names.add(to_order[i][1])
+            guide_names.add(guide[i])
+        if order_names != guide_names:
+            raise Exception("Namen niet allemaal gelijk.")
+        help_array = np.zeros(len(guide))
+        for i in range(len(guide)):
+            ind = [k for k in range(len(guide)) if guide[k] == to_order[i][1]]
+            if len(ind) !=1:
+                raise Exception("Elke naam hoort slechts eenmaal voor te komen.")
+            help_array[ind] = to_order[i]
+    else:
+        raise Exception("Guide hoort effectief namen te bevatten foemp.")
+    return help_array
+
     
