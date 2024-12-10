@@ -1,5 +1,6 @@
 from os import error
 import numpy as np
+from sphinx import ret
 import sympy as sp
 import sympy.stats as stats
 from matplotlib import pyplot as plt
@@ -319,8 +320,25 @@ def uncertainty_intervals_2D(min_hybrid, x_val, y_val, x_variance, y_variance,  
         intervallen.append(find_sigma_values_2D(x_val, y_val, x_variance, y_variance, min_hybrid, i, chi_min, model, n_param))
     return intervallen
 
-def jackknife_errors():
-    pass
+def jackknife_parameters_i(index, n_param, model, initial_vals, x_val, y_val, x_variance, y_variance):
+    x_val_i = np.delete(x_val, index)
+    y_val_i = np.delete(y_val, index)
+    mini = minimize_chi2_2D(model, initial_vals, x_val_i, y_val_i, y_variance, x_variance, n_param)
+    return np.array(mini["x"][:n_param])
+
+def jackknife_parameterschattingen(model, initial_vals, n_param, x_val, y_val, x_variance, y_variance, min_params):
+    num_points = len(x_val)
+    i_pseudovariat = np.array([])
+    for i in range(num_points):
+        i_de_schatting = jackknife_parameters_i(i, n_param, model, initial_vals, x_val, y_val, x_variance, y_variance)
+        corrected = num_points*min_params - (num_points - 1)*i_de_schatting
+        i_pseudovariat = np.append(i_pseudovariat, corrected)
+    jackknife_estimation = np.sum(i_pseudovariat)/num_points
+    jackknife_variance = np.sum((i_pseudovariat - jackknife_estimation)**2)/(num_points-1)
+    jackknife_standard_error = np.sqrt(jackknife_variance/num_points)
+    return (jackknife_estimation, jackknife_standard_error)
+
+
 def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance, 
         x_as_titel = "X-as", y_as_titel = "Y-as", titel = "Fit", error_method = "Old", detailed_logs = False): #Veel van deze inputs doen niets, kmoet nog pretty
     #print code schrijven
@@ -362,9 +380,15 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
             outp.append([min_param[i], fouten[i], 'S'])
         return outp
     elif error_method == "Jackknife":
-        pass
+        parameter_vals = jackknife_parameterschattingen(model, initial_vals, n_param, x_val, y_val, x_variance, y_variance, min_param)
+        for i in range(len(parameter_vals[0])):
+            outp = parameters[i] + " heeft als waarde: %.5g \pm %.5g"%(parameter_vals[0][i],parameter_vals[1][i])
+            print(outp)
+        return parameter_vals #TODO: Dit met de nieuwe klasses doen
+
     else:
         print("Given error method not yet implemented, try ""Jackknife"" instead.")
+        return None
     #Werkt nog niet, kmoet de code nog algemeen schrijven :(
     #if printen:
     #    print("##################### Pretty print #####################")
