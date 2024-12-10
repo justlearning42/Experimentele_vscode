@@ -398,3 +398,25 @@ def latex_print_meting(meetwaarde, naam = None, printing = True):
 
 
 ######## Hulpfuncties voor classes ########
+
+
+####### datatype transformations ##########
+def vector_to_datapunt(vector, variabele):
+    """
+    Input: een vector in dataformaat, en de variabele die het representeert
+    Output: het datapunt van deze vector
+    """
+    waarde, fout, soort_fout = vector
+    return classes.datapunt(waarde, fout, variabele, soort_fout)
+
+
+def matrix_to_datapunten(matrix, variabele):
+    """
+    Input: een matrix in dataformaat, en de variabele die zij representeren
+    Output: een lijst (in de juiste volgorde) van datapunten van deze datamatrix
+    """
+    datapunten = []
+    for vector in matrix:
+        datapunten.append(vector_to_datapunt(vector, variabele).copy())
+    return datapunten
+    
