@@ -551,7 +551,7 @@ def matrix_to_datapunten(matrix, variabele):
             raise TypeError("variabele moet een sp.symbol zijn")
     datapunten = []
     for vector in matrix:
-        datapunten.append(vector_to_datapunt(vector, variabele).copy())
+        datapunten.append(vector_to_datapunt(vector, variabele))
     return datapunten
 
 
