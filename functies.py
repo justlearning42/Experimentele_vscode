@@ -1,6 +1,5 @@
 from os import error
 import numpy as np
-from sphinx import ret
 import sympy as sp
 import sympy.stats as stats
 from matplotlib import pyplot as plt
@@ -535,6 +534,8 @@ def vector_to_datapunt(vector, variabele):
     Input: een vector in dataformaat, en de variabele die het representeert
     Output: het datapunt van deze vector
     """
+    if type(variabele) != sp.symbols:
+            raise TypeError
     waarde, fout, soort_fout = vector
     return classes.datapunt(waarde, fout, variabele, soort_fout)
 
@@ -544,10 +545,13 @@ def matrix_to_datapunten(matrix, variabele):
     Input: een matrix in dataformaat, en de variabele die zij representeren
     Output: een lijst (in de juiste volgorde) van datapunten van deze datamatrix
     """
+    if type(variabele) != sp.symbols:
+            raise TypeError("variabele moet een sp.symbol zijn")
     datapunten = []
     for vector in matrix:
         datapunten.append(vector_to_datapunt(vector, variabele).copy())
     return datapunten
+
 
 def same_order(to_order, guide):
     if len(to_order) != len(guide):
