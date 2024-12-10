@@ -553,6 +553,11 @@ def latex_print_meting(meetwaarde, naam = None, printing = True):
 
 
 ####### datatype transformations ##########
+def datapunt_to_vector(datapunt):
+    waarde = datapunt.get_val()
+    fout = datapunt.get_fout()
+    verdeling = datapunt.get_verdeling()
+    return [waarde, fout, verdeling]
 def vector_to_datapunt(vector, variabele):
     """
     Input: een vector in dataformaat, en de variabele die het representeert

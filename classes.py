@@ -197,11 +197,24 @@ class datapunt:
         else:
             print("Andere verdelingen nog niet geïmplementeerd, fout als wortel van variantie genomen")
             self.variance = fout**2
-    
+    def __str__(self):
+        '''
+        output: [waarde, sigma, type_fout]
+        
+        '''
+        waarde = self.waarde
+        sigma = np.sqrt(self.variance)
+        type_fout = self.verdeling
+        return [waarde, sigma, type_fout]
     def get_val(self):
         return self.waarde
     def get_fout(self):
         return self.pmfout
+    def get_latex(self):
+        return functies.latex_print_meting(functies.datapunt_to_vector(datapunt))
+
+    def get_verdeling(self):
+        return self.verdeling
     def get_variance(self):
         return self.variance
     
