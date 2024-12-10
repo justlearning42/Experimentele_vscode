@@ -107,7 +107,7 @@ class vergelijking:
         try:
             iterator = iter(parameters)
         except TypeError:
-            if isinstance(sp.symbols, parameters) and parameters in self.formule.free_symbols:
+            if isinstance(sp.Symbol, parameters) and parameters in self.formule.free_symbols:
                 self.constants += set(parameters)
                 self.param -= set(parameters)
             else:
@@ -124,7 +124,7 @@ class vergelijking:
         try:
             iterator = iter(constants)
         except TypeError:
-            if isinstance(sp.symbols, constants) and constants in self.formule.free_symbols:
+            if isinstance(sp.Symbol, constants) and constants in self.formule.free_symbols:
                 self.param += set(constants)
                 self.constants -= set(constants)
             else:
@@ -180,7 +180,7 @@ class datapunt:
     def __init__(self, waarde, fout, variabele, verdeling = "Normaal"):
         #Fout is wat we geven als \pm, voor uniform kan ook (resolutie, nauwkeurigheid)
         self.waarde = waarde
-        if type(variabele) != sp.symbols:
+        if type(variabele) != sp.Symbol:
             raise TypeError
         self.naam = variabele
         self.verdeling = verdeling
