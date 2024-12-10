@@ -8,7 +8,7 @@ from scipy.stats import chi2
 import functies
 import numbers
 from IPython.display import display
-
+#kaas is lekker
 
 class vergelijking():
     def __init__(self, sympy_formule, parameters = None, constants = None):
