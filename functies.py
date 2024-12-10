@@ -534,7 +534,7 @@ def vector_to_datapunt(vector, variabele):
     Input: een vector in dataformaat, en de variabele die het representeert
     Output: het datapunt van deze vector
     """
-    if type(variabele) != sp.symbols:
+    if type(variabele) != sp.core.symbol.Symbol:
             raise TypeError
     waarde, fout, soort_fout = vector
     return classes.datapunt(waarde, fout, variabele, soort_fout)
@@ -545,7 +545,7 @@ def matrix_to_datapunten(matrix, variabele):
     Input: een matrix in dataformaat, en de variabele die zij representeren
     Output: een lijst (in de juiste volgorde) van datapunten van deze datamatrix
     """
-    if type(variabele) != sp.symbols:
+    if type(variabele) != sp.core.symbol.Symbol:
             raise TypeError("variabele moet een sp.symbol zijn")
     datapunten = []
     for vector in matrix:
