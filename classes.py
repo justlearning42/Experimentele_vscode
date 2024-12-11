@@ -10,6 +10,7 @@ import numbers
 from IPython.display import display
 
 
+
 class vergelijking:
     def __init__(self, sympy_formule, parameters = None, constants = None):
         self.formule = sympy_formule
@@ -180,6 +181,7 @@ class datapunt:
     def __init__(self, waarde, fout, variabele, verdeling = "Normaal"):
         #Fout is wat we geven als \pm, voor uniform kan ook (resolutie, nauwkeurigheid)
         self.waarde = waarde
+        self.variabele = variabele
         if type(variabele) != sp.Symbol:
             raise TypeError
         self.naam = variabele
@@ -203,9 +205,11 @@ class datapunt:
         
         '''
         waarde = self.waarde
-        sigma = np.sqrt(self.variance)
+        fout = self.pmfout
         type_fout = self.verdeling
-        return [waarde, sigma, type_fout]
+        return 'datapunt' +str([waarde, fout, type_fout]) + ' of variable '+str(self.variabele)
+    
+
     def get_val(self):
         return self.waarde
     def get_fout(self):
