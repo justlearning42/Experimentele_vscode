@@ -257,7 +257,7 @@ def  chi2_bereken_2D(hybrid, x_val, y_val, x_variance, y_variance, model, n_para
 
 def initial_vals_2D(x_val, y_val, initial_vals):
     param_initials = initial_vals(x_val, y_val)
-    outp = np.concatenate(param_initials, x_val)
+    outp = np.concatenate((param_initials, x_val))
     return outp
 
 def minimize_chi2_2D(model, initial_vals, x_val, y_val, y_variance, x_variance, n_param):
@@ -288,18 +288,21 @@ def chi2_in_1_var_2D(var, ind_var, x_val, y_val, x_variance, y_variance, hybrid,
             kopie = np.copy(hybrid)
              #De waarde van var wordt op de juiste index ingevuld in de parameter vector.
             np.put(kopie, ind_var, val)
-            outp = np.append(outp, chi2_bereken_2D(var, x_val, y_val, x_variance, y_variance, model, n_param) - chi2.ppf(0.68, df=n_param) - chi_min)
+            outp = np.append(outp, chi2_bereken_2D(kopie, x_val, y_val, x_variance, y_variance, model, n_param) - chi2.ppf(0.68, df=n_param) - chi_min)
         return outp
     except TypeError as te:
         kopie = np.copy(hybrid)
         #De waarde van var wordt op de juiste index ingevuld in de parameter vector.
         np.put(kopie, ind_var, var)
-        outp = chi2_bereken_2D(var, x_val, y_val, x_variance, y_variance, model, n_param) - chi2.ppf(0.68, df=n_param) - chi_min
+        outp = chi2_bereken_2D(kopie, x_val, y_val, x_variance, y_variance, model, n_param) - chi2.ppf(0.68, df=n_param) - chi_min
         return outp
 
-def find_sigma_values_2D(x_val, y_val, x_variance,  y_variance, hybrid, te_checken_param_ind, chi_min, model, n_param):
-    functie = lambda *args: chi2_in_1_var(*args)
+def find_sigma_values_2D(x_val, y_val, x_variance,  y_variance, hybrid, te_checken_param_ind, chi_min, model, n_param, detailed_logs = False):
+    functie = lambda *args: chi2_in_1_var_2D(*args)
     gok = hybrid[te_checken_param_ind]
+    if detailed_logs:
+        print("------------------------")
+        print("gok: %s" %gok)
     #De snijpunten met de 1\sigma hypercontour van de chi^2_mu verdeling zullen rond de best fittende waardes liggen
     i = 0.1
     terminate = False
@@ -310,63 +313,107 @@ def find_sigma_values_2D(x_val, y_val, x_variance,  y_variance, hybrid, te_check
         try:
             sol_left = root_scalar(functie, args = (te_checken_param_ind, x_val, y_val, x_variance, y_variance, hybrid, chi_min, model, n_param), method = "brentq", bracket = [gok*(1-i), gok], x0 = gok, x1 = (1-i)*gok)
             sol_right = root_scalar(functie, args = (te_checken_param_ind, x_val, y_val, x_variance, y_variance, hybrid, chi_min, model, n_param), method = "brentq", bracket = [gok, gok*(1+i)], x0 = gok, x1 = (1+i)*gok)
+            if detailed_logs:
+                print("Root scalar worked!")
             return [sol_left.root, sol_right.root]
         except:
-            if i != 2:
+            if i <= 2:
+                if detailed_logs:
+                    print("i increased!, now %s" %i)
+                    print("Nieuwe lower bound is %s, met waarde %s" %((1-i)*gok, chi2_in_1_var_2D((1-i)*gok, te_checken_param_ind, x_val, y_val, x_variance, y_variance, hybrid, chi_min, model, n_param)))
+                    print("---------------------")
                 i+=0.1
             else:
+                if detailed_logs:
+                    print("tried to terminate!")
                 terminate = True
-                print("Geen fout gevonden in 200% foutenmarge")
-                return [0, 0]
+    if terminate:
+        if detailed_logs:
+            print("Succesfully terminated !")
+            print("Geen fout gevonden in 200 percent foutenmarge")
+        return [0,0]
 
-def uncertainty_intervals_2D(min_hybrid, x_val, y_val, x_variance, y_variance,  chi_min, model, n_param):
+def uncertainty_intervals_2D(min_hybrid, x_val, y_val, x_variance, y_variance,  chi_min, model, n_param, detailed_logs = False):
     intervallen = []
     for i in range(0, n_param):
-        intervallen.append(find_sigma_values_2D(x_val, y_val, x_variance, y_variance, min_hybrid, i, chi_min, model, n_param))
+        intervallen.append(find_sigma_values_2D(x_val, y_val, x_variance, y_variance, min_hybrid, i, chi_min, model, n_param, detailed_logs))
     return intervallen
 
 def jackknife_parameters_i(index, n_param, model, initial_vals, x_val, y_val, x_variance, y_variance):
     x_val_i = np.delete(x_val, index)
+    x_variance_i = np.delete(x_variance, index)
     y_val_i = np.delete(y_val, index)
-    mini = minimize_chi2_2D(model, initial_vals, x_val_i, y_val_i, y_variance, x_variance, n_param)
+    y_variance_i = np.delete(y_variance, index)
+    mini = minimize_chi2_2D(model, initial_vals, x_val_i, y_val_i, y_variance_i, x_variance_i, n_param)
     return np.array(mini["x"][:n_param])
 
 def jackknife_parameterschattingen(model, initial_vals, n_param, x_val, y_val, x_variance, y_variance, min_params):
     num_points = len(x_val)
-    i_pseudovariat = np.array([])
+    i_pseudovariat = np.zeros((num_points,n_param))
     for i in range(num_points):
         i_de_schatting = jackknife_parameters_i(i, n_param, model, initial_vals, x_val, y_val, x_variance, y_variance)
         corrected = num_points*min_params - (num_points - 1)*i_de_schatting
-        i_pseudovariat = np.append(i_pseudovariat, corrected)
-    jackknife_estimation = np.sum(i_pseudovariat)/num_points
-    jackknife_variance = np.sum((i_pseudovariat - jackknife_estimation)**2)/(num_points-1)
+        i_pseudovariat[i] = corrected
+    jackknife_estimation = np.sum(i_pseudovariat, axis=0)/num_points
+    jackknife_variance = np.sum((i_pseudovariat - jackknife_estimation)**2, axis=0)/(num_points-1)
     jackknife_standard_error = np.sqrt(jackknife_variance/num_points)
     return (jackknife_estimation, jackknife_standard_error)
 
+def plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, parameter_vals, chi_2, p, save_name = None, size = None):
+    if size is None:
+        fig, ax = plt.subplots(1,1, figsize = (10,10))
+    else:
+        fig, ax = plt.subplots(1,1, figsize = size)
+    ax.errorbar(x_val, y_val, xerr = np.sqrt(x_variance), yerr = np.sqrt(y_variance), 
+                fmt="o", label = "Datapunten", color = "k", ecolor= "k", elinewidth=0.8, capsize=1)
+    length = np.max(x_val) - np.min(x_val)
+    t = np.linspace(np.min(x_val) - length/20, np.max(x_val) + length/20, 100000)
+    model_label = "Model waardes, \n $\chi^2_{red}$ = %s, p = %s" %(chi_2, p)
+    ax.plot(t, model(t, parameter_vals), 'r--', label = model_label)
+    ax.set_xlabel(x_as_titel)
+    ax.set_ylabel(y_as_titel)
+    ax.set_title(titel)
+    ax.legend()
+    if save_name is not None:
+        plt.savefig(save_name)
+    plt.show()
+
 
 def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance, 
-        x_as_titel = "X-as", y_as_titel = "Y-as", titel = "Fit", error_method = "Old", detailed_logs = False): #Veel van deze inputs doen niets, kmoet nog pretty
+        x_as_titel = "X-as", y_as_titel = "Y-as", titel = "Fit", figure_name = None, size = None,
+        error_method = "Old", detailed_logs = False): #Veel van deze inputs doen niets, kmoet nog pretty
     #print code schrijven
     #TODO: cas_matrix support maken
     #TODO: ML code schrijven
     n_param = len(parameters)
-    print("Raw output")
     mini = minimize_chi2_2D(model, initial_vals, x_val, y_val, y_variance, x_variance, n_param)
     chi_min = mini["fun"]
     min_hybrid = mini["x"]
     min_param = min_hybrid[:n_param]
     if detailed_logs: 
+        print("Ditctionary van minimize:")
         print(mini)
+        print("---------------------------")
+        print("Minimale parameter waardes:")
+        print(min_param)
+        print("---------------------------")
+        print("Minimale hybrid waardes:")
+        print(min_hybrid)
+        print("---------------------------")
     
     if error_method == "Old":
-        betrouwb_int = uncertainty_intervals_2D(min_hybrid, x_val, y_val, x_variance, y_variance, chi_min, model, n_param)
-        print(betrouwb_int)
+        betrouwb_int = uncertainty_intervals_2D(min_hybrid, x_val, y_val, x_variance, y_variance, chi_min, model, n_param, detailed_logs)
+        if detailed_logs:
+            print("Betrouwbaarheids intervallen voor de parameters: ")
+            print(betrouwb_int)
+            print("---------------------------")
+        #print(betrouwb_int)
         foutjes = []
         for i in range(0, n_param):
             top = betrouwb_int[i][1] - min_param[i]
             bot = min_param[i] - betrouwb_int[i][0]
             foutjes.append((bot, top))
-            outp = parameters[i] + " heeft als waarde: %.5g + %.5g - %.5g met 68%% betrouwbaarheidsinterval: [%.5g, %.5g] "%(min_param[i], top, bot, betrouwb_int[i][0], betrouwb_int[i][1])
+            outp = str(parameters[i]) + " heeft als waarde: %.5g + %.5g - %.5g met 68%% betrouwbaarheidsinterval: [%.5g, %.5g] "%(min_param[i], top, bot, betrouwb_int[i][0], betrouwb_int[i][1])
             print(outp)
 
         nu = len(x_val) - n_param
@@ -383,12 +430,26 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
         outp = []
         for i in range(0, len(parameters)):
             outp.append([min_param[i], fouten[i], 'S'])
+        plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, min_param, chi_red, p_waarde, figure_name, size)
         return outp
     elif error_method == "Jackknife":
-        parameter_vals = jackknife_parameterschattingen(model, initial_vals, n_param, x_val, y_val, x_variance, y_variance, min_param)
-        for i in range(len(parameter_vals[0])):
-            outp = parameters[i] + " heeft als waarde: %.5g \pm %.5g"%(parameter_vals[0][i],parameter_vals[1][i])
+        Jackknife_result = jackknife_parameterschattingen(model, initial_vals, n_param, x_val, y_val, x_variance, y_variance, min_param)
+        parameter_vals = Jackknife_result[0]
+        parameter_fouten = Jackknife_result[1]
+        if detailed_logs:
+            print(Jackknife_result)
+        for i in range(len(parameter_vals)):
+            outp = str(parameters[i]) + " heeft als waarde: %.5g \pm %.5g"%(parameter_vals[i],parameter_fouten[i])
             print(outp)
+        
+        fin = np.append(parameter_vals, min_hybrid[n_param:])
+        nu = len(x_val) - n_param
+        chi_val = chi2_bereken_2D(fin, x_val, y_val, x_variance, y_variance, model, n_param)
+        p_waarde = chi2.sf(chi_val, df=nu)
+        chi_red = chi_val/nu
+        print("De p-waarde voor de hypothese test dat het model zinvol is, wordt gegeven door: %.5g"%p_waarde)
+        print("De gereduceerde chi^2 waarde is: %.5g"%chi_red)
+        plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, parameter_vals, "idk", "Geen flauw idee", figure_name, size)
         return parameter_vals #TODO: Dit met de nieuwe klasses doen
 
     else:
