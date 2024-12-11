@@ -181,7 +181,6 @@ class datapunt:
     def __init__(self, waarde, fout, variabele, verdeling = "Normaal"):
         #Fout is wat we geven als \pm, voor uniform kan ook (resolutie, nauwkeurigheid)
         self.waarde = waarde
-        self.variabele = variabele
         if type(variabele) != sp.Symbol:
             raise TypeError
         self.naam = variabele
@@ -207,11 +206,13 @@ class datapunt:
         waarde = self.waarde
         fout = self.pmfout
         type_fout = self.verdeling
-        return 'datapunt' +str([waarde, fout, type_fout]) + ' of variable '+str(self.variabele)
+        return 'datapunt' +str([waarde, fout, type_fout]) + ' of variable '+str(self.naam)
     
     def __repr__(self):
         return self.__str__()
 
+    def get_naam(self):
+        return self.naam
     def get_val(self):
         return self.waarde
     def get_fout(self):
