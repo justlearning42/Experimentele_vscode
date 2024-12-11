@@ -209,6 +209,8 @@ class datapunt:
         type_fout = self.verdeling
         return 'datapunt' +str([waarde, fout, type_fout]) + ' of variable '+str(self.variabele)
     
+    def __repr__(self):
+        return self.__str__()
 
     def get_val(self):
         return self.waarde
