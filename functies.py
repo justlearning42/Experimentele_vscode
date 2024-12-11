@@ -32,12 +32,14 @@ def data_analyse(equation, param_values, eval_name):
         parameters.append(param_value.get_naam())
         substitutie.append((param_value.get_naam(), param_value.get_val()))
     sigmakwadr = foutpropagatie(equation.formule.copy(), parameters, fouten)
+    for subs in substitutie:
+        sigmakwadr = sigmakwadr.subs(subs[0],subs[1])
     waarde = equation.subs(substitutie)
-    for subst in substitutie:
-        waarde = waarde.subs(subst[0],subst[1])
+    sigmakwadr = sigmakwadr.evalf()
     print(waarde,'waarde')
     print(sigmakwadr,'sigmakwadr')
-    return classes.datapunt(waarde, np.sqrt(sigmakwadr), eval_name, verdeling = "Normaal")
+    print(type(sigmakwadr))
+    return classes.datapunt(waarde, sigmakwadr**0.5, eval_name, verdeling = "Normaal")
 
 def multiple_analysis(equation, params_list, eval_name):
     """

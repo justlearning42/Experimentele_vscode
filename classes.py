@@ -149,7 +149,7 @@ class vergelijking:
                 raise "Substitueer enkel waardes in de vgl"
             else:
                 variabelen.add(substitutie[0])
-        self.formule = self.formule.subs(self.formule, substituties)
+            self.formule = self.formule.subs(substitutie[0], substitutie[1])
         self.param -= variabelen
         self.constants -= variabelen
         return self
