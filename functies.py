@@ -257,7 +257,6 @@ def  chi2_bereken_2D(hybrid, x_val, y_val, x_variance, y_variance, model, n_para
 
 def initial_vals_2D(x_val, y_val, initial_vals):
     param_initials = initial_vals(x_val, y_val)
-    guess_initials = x_val
     outp = np.concatenate(param_initials, x_val)
     return outp
 
@@ -275,7 +274,7 @@ def minimize_chi2_2D(model, initial_vals, x_val, y_val, y_variance, x_variance, 
         oplossing: Een array dat de minimale waardes voor de parameters geeft
     """
     chi2_func = lambda *args: chi2_bereken_2D(*args)
-    gok = initial_vals_2D(x_val, y_val, n_param, initial_vals)
+    gok = initial_vals_2D(x_val, y_val, initial_vals)
     mini = minimize(chi2_func, gok, args = (x_val, y_val,x_variance, y_variance, model, n_param))
     return mini
 
