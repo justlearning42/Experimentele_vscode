@@ -256,6 +256,8 @@ def  chi2_bereken_2D(hybrid, x_val, y_val, x_variance, y_variance, model, n_para
 def initial_vals_2D(x_val, y_val, initial_vals):
     param_initials = initial_vals(x_val, y_val)
     outp = np.concatenate((param_initials, x_val))
+    print(param_initials)
+    print(outp)
     return outp
 
 def minimize_chi2_2D(model, initial_vals, x_val, y_val, y_variance, x_variance, n_param):
@@ -295,7 +297,7 @@ def chi2_in_1_var_2D(var, ind_var, x_val, y_val, x_variance, y_variance, hybrid,
         outp = chi2_bereken_2D(kopie, x_val, y_val, x_variance, y_variance, model, n_param) - chi2.ppf(0.68, df=n_param) - chi_min
         return outp
 
-def find_sigma_values_2D(x_val, y_val, x_variance,  y_variance, hybrid, te_checken_param_ind, chi_min, model, n_param, detailed_logs = False):
+def find_sigma_values_2D(x_val, y_val, x_variance,  y_variance, hybrid, te_checken_param_ind, chi_min, model, n_param, grootteorde, detailed_logs = False):
     functie = lambda *args: chi2_in_1_var_2D(*args)
     gok = hybrid[te_checken_param_ind]
     if detailed_logs:
@@ -304,37 +306,57 @@ def find_sigma_values_2D(x_val, y_val, x_variance,  y_variance, hybrid, te_check
     #De snijpunten met de 1\sigma hypercontour van de chi^2_mu verdeling zullen rond de best fittende waardes liggen
     i = 0.1
     terminate = False
-    while i<=2 and not terminate:
+    while i<=3 and not terminate:
         #scipy.optimize.fsolve vindt de nulpunten van de gegeven functie, chi2_in_1_var is gedefinieerd zodat de gezochte boven
         #en ondergrenzen van het BI precies de nulpunten zijn.
         #Om de bovengrens te vinden wordt een initiële waarde boven de best fittende waarde genomen, omgekeerd voor de ondergrens.
         try:
+            print(functie)
             sol_left = root_scalar(functie, args = (te_checken_param_ind, x_val, y_val, x_variance, y_variance, hybrid, chi_min, model, n_param), method = "brentq", bracket = [gok*(1-i), gok], x0 = gok, x1 = (1-i)*gok)
             sol_right = root_scalar(functie, args = (te_checken_param_ind, x_val, y_val, x_variance, y_variance, hybrid, chi_min, model, n_param), method = "brentq", bracket = [gok, gok*(1+i)], x0 = gok, x1 = (1+i)*gok)
             if detailed_logs:
                 print("Root scalar worked!")
             return [sol_left.root, sol_right.root]
         except:
-            if i <= 2:
+            try:
+                print(functie)
+                sol_left = root_scalar(functie, args = (te_checken_param_ind, x_val, y_val, x_variance, y_variance, hybrid, chi_min, model, n_param), method = "brentq", bracket = [gok*(1-i), gok], x0 = gok, x1 = (1-i)*gok)
+                sol_right = root_scalar(functie, args = (te_checken_param_ind, x_val, y_val, x_variance, y_variance, hybrid, chi_min, model, n_param), method = "brentq", bracket = [gok, gok*(1+i)], x0 = gok, x1 = (1+i)*gok)
                 if detailed_logs:
-                    print("i increased!, now %s" %i)
-                    print("Nieuwe lower bound is %s, met waarde %s" %((1-i)*gok, chi2_in_1_var_2D((1-i)*gok, te_checken_param_ind, x_val, y_val, x_variance, y_variance, hybrid, chi_min, model, n_param)))
-                    print("---------------------")
-                i+=0.1
-            else:
-                if detailed_logs:
-                    print("tried to terminate!")
-                terminate = True
+                    print("Root scalar worked by askin' Papa Newton for help!")
+                return [sol_left.root, sol_right.root]
+            except:
+                if i <= 2:
+                    if detailed_logs:
+                        print("i increased!, now %s" %i)
+                        print("Nieuwe lower bound is %s, met waarde %s" %((1-i)*gok, chi2_in_1_var_2D((1-i)*gok, te_checken_param_ind, x_val, y_val, x_variance, y_variance, hybrid, chi_min, model, n_param)))
+                        print("---------------------")
+                    i+=0.1
+                else:
+                    if detailed_logs:
+                        print("tried to terminate!")
+                    terminate = True
     if terminate:
         if detailed_logs:
             print("Succesfully terminated !")
-            print("Geen fout gevonden in 200 percent foutenmarge")
-        return [0,0]
+            print("Geen fout gevonden in 300 percent foutenmarge")
+        return [-5*grootteorde, 5*grootteorde]
+    else:
+        print('WARNING: UNEXPECTED OCCURENCE HAS HAPPENED, PLEASE PROCEED DEBUGGING functies.find_sigma_values_2D')
+        print('functies.find_sigma_values_2D has failed. The program has resulted to outputting racism')
+        from time import sleep
+        sleep(1)
+        import winsound
+        for i in range(1000):
+            winsound.PlaySound("SystemExit", winsound.SND_ALIAS)
+            print('neger')
 
-def uncertainty_intervals_2D(min_hybrid, x_val, y_val, x_variance, y_variance,  chi_min, model, n_param, detailed_logs = False):
+        return "negernegerneger"
+
+def uncertainty_intervals_2D(min_hybrid, x_val, y_val, x_variance, y_variance,  chi_min, model, n_param, grootteorde, detailed_logs = False):
     intervallen = []
     for i in range(0, n_param):
-        intervallen.append(find_sigma_values_2D(x_val, y_val, x_variance, y_variance, min_hybrid, i, chi_min, model, n_param, detailed_logs))
+        intervallen.append(find_sigma_values_2D(x_val, y_val, x_variance, y_variance, min_hybrid, i, chi_min, model, n_param, grootteorde, detailed_logs))
     return intervallen
 
 def jackknife_parameters_i(index, n_param, model, initial_vals, x_val, y_val, x_variance, y_variance):
@@ -377,9 +399,13 @@ def plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel
     plt.show()
 
 
-def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance, 
+def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance, grootteorde = 1,
         x_as_titel = "X-as", y_as_titel = "Y-as", titel = "Fit", figure_name = None, size = None,
-        error_method = "Old", detailed_logs = False): #Veel van deze inputs doen niets, kmoet nog pretty
+        error_method = "Old", detailed_logs = False): 
+    """
+    grootteorde geeft een schatting van de grootteorde van de parameters
+    """
+    #Veel van deze inputs doen niets, kmoet nog pretty
     #print code schrijven
     #TODO: cas_matrix support maken
     #TODO: ML code schrijven
@@ -398,14 +424,13 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
         print("Minimale hybrid waardes:")
         print(min_hybrid)
         print("---------------------------")
-    
     if error_method == "Old":
-        betrouwb_int = uncertainty_intervals_2D(min_hybrid, x_val, y_val, x_variance, y_variance, chi_min, model, n_param, detailed_logs)
+        betrouwb_int = uncertainty_intervals_2D(min_hybrid, x_val, y_val, x_variance, y_variance, chi_min, model, n_param, grootteorde, detailed_logs)
         if detailed_logs:
             print("Betrouwbaarheids intervallen voor de parameters: ")
             print(betrouwb_int)
             print("---------------------------")
-        #print(betrouwb_int)
+        print(betrouwb_int)
         foutjes = []
         for i in range(0, n_param):
             top = betrouwb_int[i][1] - min_param[i]
