@@ -379,7 +379,7 @@ def jackknife_parameterschattingen(model, initial_vals, n_param, x_val, y_val, x
     jackknife_standard_error = np.sqrt(jackknife_variance/num_points)
     return (jackknife_estimation, jackknife_standard_error)
 
-def plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, parameter_vals, chi_2, p, save_name = None, size = None):
+def plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, parameter_vals, chi_2, p, save_name = None, size = None, savefig = False):
     if size is None:
         fig, ax = plt.subplots(1,1, figsize = (10,10))
     else:
@@ -396,12 +396,14 @@ def plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel
     ax.legend()
     if save_name is not None:
         plt.savefig(save_name)
+    if savefig:
+        plt.savefig(titel+'.png')
     plt.show()
 
 
 def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance, grootteorde = 1,
         x_as_titel = "X-as", y_as_titel = "Y-as", titel = "Fit", figure_name = None, size = None,
-        error_method = "Old", detailed_logs = False): 
+        error_method = "Old", savefig = False, detailed_logs = False): 
     """
     grootteorde geeft een schatting van de grootteorde van de parameters
     """
@@ -472,7 +474,7 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
         chi_red = chi_val/nu
         print("De p-waarde voor de hypothese test dat het model zinvol is, wordt gegeven door: %.5g"%p_waarde)
         print("De gereduceerde chi^2 waarde is: %.5g"%chi_red)
-        plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, parameter_vals, "idk", "Geen flauw idee", figure_name, size)
+        plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, parameter_vals, "idk", "Geen flauw idee", figure_name, size, savefig)
         return parameter_vals #TODO: Dit met de nieuwe klasses doen
 
     else:
@@ -596,7 +598,13 @@ def latex_print_tabel(meetwaarden, namen):
     print('\\end{tabular}\\end{table}')
 
 def latex_print_meting(meetwaarde, naam = None, printing = True):
-    #meetwaarden is de standaard vector [waarde, fout] met eventueel 'U'/'N' erachter
+    """
+    meetwaarden is de standaard vector [waarde, fout] met eventueel 'U'/'N' erachter
+    het kan ook een datapunt object zijn
+    """
+    if type(meetwaarde) == classes.datapunt:
+        naam = str(meetwaarde.get_naam())
+        meetwaarde = datapunt_to_vector(meetwaarde)
     waarde, fout = meetwaarde[0],meetwaarde[1]
     exponent = 0
     TUPPEL = False
@@ -612,7 +620,6 @@ def latex_print_meting(meetwaarde, naam = None, printing = True):
             fout = max(fout)
 
     while not 1 <= fout*(10**(-1*exponent)) < 100:
-        print(fout, exponent)
         if 1 < fout:
             exponent += 1
         else:
