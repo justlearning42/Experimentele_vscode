@@ -27,18 +27,16 @@ def data_analyse(equation, param_values, eval_name):
     fouten = []
     parameters = []
     substitutie = []
+    vgl = equation
     for param_value in param_values:
         fouten.append(param_value.variance)
         parameters.append(param_value.get_naam())
         substitutie.append((param_value.get_naam(), param_value.get_val()))
-    sigmakwadr = foutpropagatie(equation.formule.copy(), parameters, fouten)
+    sigmakwadr = foutpropagatie(vgl.formule, parameters, fouten)
     for subs in substitutie:
         sigmakwadr = sigmakwadr.subs(subs[0],subs[1])
-    waarde = equation.subs(substitutie)
+    waarde = vgl.calculate(substitutie)
     sigmakwadr = sigmakwadr.evalf()
-    print(waarde,'waarde')
-    print(sigmakwadr,'sigmakwadr')
-    print(type(sigmakwadr))
     return classes.datapunt(waarde, sigmakwadr**0.5, eval_name, verdeling = "Normaal")
 
 def multiple_analysis(equation, params_list, eval_name):

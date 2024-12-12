@@ -142,11 +142,15 @@ class vergelijking:
     #### Dingen invullen ####
     #########################
     def subs(self, substituties):
-        # substituties van hetzelfde formaat als sp.subs()
+        """
+        substituties van hetzelfde formaat als sp.subs()
+        veranderd de interne representatie
+        """
         variabelen = set()
         for substitutie in substituties:
             if substitutie[0] not in self.formule.free_symbols:
-                raise "Substitueer enkel waardes in de vgl"
+                #raise "Substitueer enkel waardes in de vgl"
+                pass #fuck de errors
             else:
                 variabelen.add(substitutie[0])
             self.formule = self.formule.subs(substitutie[0], substitutie[1])
@@ -154,6 +158,18 @@ class vergelijking:
         self.constants -= variabelen
         return self
     
+    def calculate(self, substituties):
+        """
+        substituties: een lijst [(Symbol, value),...] die de symbolen geeft met de waarde die ze moeten bevatten
+        @return: de waarde die de vergelijking zou opleveren met de gegeven substituties
+        """
+        variabelen = set()
+        formule = self.formule
+        for substitutie in substituties:
+            formule = formule.subs(substitutie[0], substitutie[1])
+        self.param -= variabelen
+        return formule
+
     def evaluate(self, parameter_vals, constant_vals, eval_name):
         """
         parameter_vals = np array van datapunt objecten met zelfde lengte als self.param. Als dit een lijst van lijsten is wordt return ook een lijst teruggegeven
