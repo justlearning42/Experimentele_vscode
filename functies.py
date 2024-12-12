@@ -226,6 +226,24 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
     #    print("##################### Pretty print #####################")
     #    pretty_print_results(x_val, y_val, y_err, chi_min, min_param, betrouwb_int, parameters)
 
+def plot_chi2(plotwaarde, param, x_val, y_val, y_err, soort_fout, model):
+    """
+    plotwaarde = (range, indx)
+    range is de linspace waarover geplot wordt bij de parameter met index indx
+    """
+    rangge, indx = plotwaarde
+
+    fig, ax = plt.subplots(1,1)
+    y_as = []
+    for i in range(len(rangge)):
+        parami = param.copy()
+        parami[indx] = i
+        y_as.append(chi2_bereken(parami, x_val, y_val, y_err, soort_fout, model))
+    y_as = np.array(y_as)
+    ax.plot(rangge, y_as)
+    ax.set_xlabel('parameter op index'+str(i))
+    ax.set_ylabel('$\\chi^2$')
+    plt.tight_layout();plt.show()
 
 ########## Fit code - 2D ###########
 def  chi2_bereken_2D(hybrid, x_val, y_val, x_variance, y_variance, model, n_param):
@@ -252,6 +270,25 @@ def  chi2_bereken_2D(hybrid, x_val, y_val, x_variance, y_variance, model, n_para
 
     chi_2_val = np.sum(x_diffs + y_diffs)
     return chi_2_val
+
+def plot_chi2_2D(plotwaarde, param, x_val, y_val, y_err, soort_fout, model):
+    """
+    plotwaarde = (range, indx)
+    range is de linspace waarover geplot wordt bij de parameter met index indx
+    """
+    rangge, indx = plotwaarde
+
+    fig, ax = plt.subplots(1,1)
+    y_as = []
+    for i in range(len(rangge)):
+        parami = param.copy()
+        parami[indx] = i
+        y_as.append(chi2_bereken_2D(parami, x_val, y_val, y_err, soort_fout, model))
+    y_as = np.array(y_as)
+    ax.plot(rangge, y_as)
+    ax.set_xlabel('parameter op index'+str(i))
+    ax.set_ylabel('$\\chi^2$')
+    plt.tight_layout();plt.show()
 
 def initial_vals_2D(x_val, y_val, initial_vals):
     param_initials = initial_vals(x_val, y_val)
@@ -654,6 +691,7 @@ def datapunt_to_vector(datapunt):
     fout = datapunt.get_fout()
     verdeling = datapunt.get_verdeling()
     return [waarde, fout, verdeling]
+
 def vector_to_datapunt(vector, variabele):
     """
     Input: een vector in dataformaat, en de variabele die het representeert
