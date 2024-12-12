@@ -219,11 +219,7 @@ class datapunt:
         output: [waarde, sigma, type_fout]
         
         '''
-        waarde = self.waarde
-        fout = self.pmfout
-        type_fout = self.verdeling
-        return 'datapunt' +str([waarde, fout, type_fout]) + ' of variable '+str(self.naam)
-    
+        return 'datapunt: ' + str(self.naam) + " = " +str([self.waarde, self.pmfout, self.verdeling])
     def __repr__(self):
         return self.__str__()
 
