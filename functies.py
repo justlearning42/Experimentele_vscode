@@ -186,7 +186,7 @@ def uncertainty_intervals(min_values, x_val, y_val, y_err,  chi_min, model, soor
     return intervallen
 
 def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat", 
-        x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", printen = "False"): #Veel van deze inputs doen niets, kmoet nog pretty
+        x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", detailed_logs = False): #Veel van deze inputs doen niets, kmoet nog pretty
     #print code schrijven
     #TODO: cas_matrix support maken
     #TODO: ML code schrijven
@@ -206,6 +206,9 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
         outp = parameters[i] + " heeft als waarde: %.5g + %.5g - %.5g met 68%% betrouwbaarheidsinterval: [%.5g, %.5g] "%(min_param[i], top, bot, betrouwb_int[i][0], betrouwb_int[i][1])
         print(outp)
 
+    if detailed_logs:
+        for i in range(len(min_param)):
+            plot_chi2((betrouwb_int[i], i), min_param, x_val, y_val, y_err, soort_fout, model)
     nu = len(x_val) - len(parameters)
     p_waarde = chi2.sf(chi_min, df=nu)
     chi_red = chi_min/nu
@@ -221,21 +224,18 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
     for i in range(0, len(parameters)):
         outp.append([min_param[i], fouten[i], 'S'])
     return outp
-    #Werkt nog niet, kmoet de code nog algemeen schrijven :(
-    #if printen:
-    #    print("##################### Pretty print #####################")
-    #    pretty_print_results(x_val, y_val, y_err, chi_min, min_param, betrouwb_int, parameters)
+
 
 def plot_chi2(plotwaarde, param, x_val, y_val, y_err, soort_fout, model):
     """
     plotwaarde = (range, indx)
     range is de linspace waarover geplot wordt bij de parameter met index indx
     """
-    rangge, indx = plotwaarde
-
+    [bot, top], indx = plotwaarde
+    rangge = np.linspace(bot, top, 10000)
     fig, ax = plt.subplots(1,1)
     y_as = []
-    for i in range(len(rangge)):
+    for i in rangge:
         parami = param.copy()
         parami[indx] = i
         y_as.append(chi2_bereken(parami, x_val, y_val, y_err, soort_fout, model))
@@ -271,22 +271,22 @@ def  chi2_bereken_2D(hybrid, x_val, y_val, x_variance, y_variance, model, n_para
     chi_2_val = np.sum(x_diffs + y_diffs)
     return chi_2_val
 
-def plot_chi2_2D(plotwaarde, param, x_val, y_val, y_err, soort_fout, model):
+def plot_chi2_2D(plotwaarde, min_param, x_val, y_val, x_variance, y_variance, model, n_param):
     """
     plotwaarde = (range, indx)
     range is de linspace waarover geplot wordt bij de parameter met index indx
     """
-    rangge, indx = plotwaarde
-
+    [bot, top], indx = plotwaarde
+    rangge = np.linspace(bot, top, 10000)
     fig, ax = plt.subplots(1,1)
     y_as = []
-    for i in range(len(rangge)):
-        parami = param.copy()
+    for i in rangge:
+        parami = min_param.copy()
         parami[indx] = i
-        y_as.append(chi2_bereken_2D(parami, x_val, y_val, y_err, soort_fout, model))
+        y_as.append(chi2_bereken_2D(parami, x_val, y_val, x_variance, y_variance, model, n_param))
     y_as = np.array(y_as)
     ax.plot(rangge, y_as)
-    ax.set_xlabel('parameter op index'+str(i))
+    ax.set_xlabel('Parameter op index'+str(indx))
     ax.set_ylabel('$\\chi^2$')
     plt.tight_layout();plt.show()
 
@@ -380,15 +380,7 @@ def find_sigma_values_2D(x_val, y_val, x_variance,  y_variance, hybrid, te_check
         return [-5*grootteorde, 5*grootteorde]
     else:
         print('WARNING: UNEXPECTED OCCURENCE HAS HAPPENED, PLEASE PROCEED DEBUGGING functies.find_sigma_values_2D')
-        print('functies.find_sigma_values_2D has failed. The program has resulted to outputting racism')
-        from time import sleep
-        sleep(1)
-        import winsound
-        for i in range(1000):
-            winsound.PlaySound("SystemExit", winsound.SND_ALIAS)
-            print('neger')
-
-        return "negernegerneger"
+        return [None, None]
 
 def uncertainty_intervals_2D(min_hybrid, x_val, y_val, x_variance, y_variance,  chi_min, model, n_param, grootteorde, detailed_logs = False):
     intervallen = []
@@ -477,7 +469,9 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
             foutjes.append((bot, top))
             outp = str(parameters[i]) + " heeft als waarde: %.5g + %.5g - %.5g met 68%% betrouwbaarheidsinterval: [%.5g, %.5g] "%(min_param[i], top, bot, betrouwb_int[i][0], betrouwb_int[i][1])
             print(outp)
-
+        if detailed_logs:
+            for i in range(n_param):
+                plot_chi2_2D((betrouwb_int[i], i), min_param, x_val, y_val, x_variance, y_variance, model, n_param)
         nu = len(x_val) - n_param
         p_waarde = chi2.sf(chi_min, df=nu)
         chi_red = chi_min/nu
