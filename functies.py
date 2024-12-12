@@ -13,17 +13,36 @@ from IPython.display import display
 
 ########### Algemene data analyse ############
 
-def foutpropagatie(expr, parameters, sigmas):
-    # onveranderd
+def foutpropagatie(expr, parameters: list[classes.datapunt]):
+    """
+    Geeft formule voor foutenpropagatie in expr
+    -------------------------
+    @param:
+     - expr: De vergelijking waar waardes ingevuld worden
+     - parameters: Een lijst van datapunt objecten die ingevuld moeten worden in de vergelijking
+    -------------------------
+    @return:
+     - sigmakwadr: Een formule om de nieuwe variantie te bepalen
+    """
     sigmakwadr = 0
     for indx in range(len(parameters)):
-        param = sp.diff(expr, parameters[indx])
-        sigm = sigmas[indx]
-        sigmakwadr += (param*sigm)**2
+        param = sp.diff(expr, parameters[indx].get_naam())
+        variance = parameters[indx].get_variance()
+        sigmakwadr += (param**2)*variance
     return sigmakwadr
 
-def data_analyse(equation, param_values, eval_name):
-    # param_values is een lijst van datapunt objecten
+def data_analyse(equation: classes.vergelijking, param_values, eval_name: sp.symbols):
+    """
+    Voert foutenpropagatie uit op een vergelijking met waardes param_values
+    ----------------------------
+    @param:
+     - equation: De vergelijking waarop foutenpropagatie moet gebeuren
+     - param_values: De waardes die ingevuld moeten worden in de vergelijking, als lijst van datapunt objecten, of als meting object (nog niet geïmplementeerd)
+     - eval_name: De naam (een sympy symbool) van het resultaat
+    ----------------------------
+    @return:
+     - Een datapunt object met waarde en fout bepaald via de vergelijking, normale verdeling en naam bepaald door eval_name
+    """
     fouten = []
     parameters = []
     substitutie = []
@@ -39,11 +58,17 @@ def data_analyse(equation, param_values, eval_name):
     sigmakwadr = sigmakwadr.evalf()
     return classes.datapunt(waarde, sigmakwadr**0.5, eval_name, verdeling = "Normaal")
 
-def multiple_analysis(equation, params_list, eval_name):
+def multiple_analysis(equation: classes.vergelijking, params_list, eval_name):
     """
-    params_list is een lijst van lijsten van datapunt objecten
-    
-    return: een np.array van datapunten
+    Voert foutenpropagatie uit op een lijst van metingen (of dataset)
+    ------------------------
+    @param:
+     - equation: De vergelijking die ingevuld moet worden
+     - params_list: De data die ingevuld moet worden, als matrix van datapunt objecten, lijst van meting objecten (niet geïmplementeerd)
+                    of als dataset object (niet geïmplementeerd)
+     - eval_name: De naam van het resultaat
+    @return: 
+     - een np.array van datapunten    
     """
     data = []
     for params in params_list:
@@ -51,8 +76,19 @@ def multiple_analysis(equation, params_list, eval_name):
     dat = np.array(data)
     return dat
 
-def gemiddelde(waarden): #bepaalt het gemiddelde van N getallen en de fout op het gemiddelde
-                         #kan ook werken met een array van arrays van getallen (meerdere berekeningen tegelijk)
+def gemiddelde(waarden: list):
+    """
+    !!! Legacy, werkt nog niet met nieuwe classes !!!
+
+    -----------------------------
+    Berekent het gemiddelde en de fout er op van een lijst (of matrix) meetwaarden
+    ------------------------
+    @param:
+     - waarden: De lijst (of matrix) van waarden waarvan het gemiddelde moet bepaald worden. Gemiddeldes worden rij per rij bepaald
+    ------------------------
+    @return:
+     - Gemiddeldes en hun fouten
+    """
     if type(waarden) != np.array:
         waarden = np.array(waarden)
     dimensies = waarden.ndim
@@ -77,7 +113,13 @@ def gemiddelde(waarden): #bepaalt het gemiddelde van N getallen en de fout op he
         terug = [[avg[i],sigma[i],'S'].copy() for i in range(len(waarden))]
     return terug
 
-def mu_sigma(waarden): #waarden met hun fout; bepaalt het gemiddelde en de meetfout (statistisch en/of meetfout)
+def mu_sigma(waarden):
+    """
+    !!! Legacy, werkt nog niet met nieuwe classes !!!
+
+    -----------------
+    Berekent het gewogen gemiddelde van een casmatrix
+    """
     fout = waarden[0][1]
     gewogengemiddelde = False
     for waarde in waarden:
