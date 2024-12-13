@@ -100,7 +100,8 @@ class vergelijking:
         return str(self.formule)
     def _sympy_(self):
         return self.formule
-
+    def copy(self):
+        return vergelijking(self.formule, self.param, self.constants)
     #################################
     #### Eigenschappen aanpassen ####
     #################################
@@ -214,6 +215,7 @@ class datapunt:
         else:
             print("Andere verdelingen nog niet geïmplementeerd, fout als wortel van variantie genomen")
             self.variance = fout**2
+    
     def __str__(self):
         '''
         output: [waarde, sigma, type_fout]

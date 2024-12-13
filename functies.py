@@ -1,3 +1,4 @@
+from csv import Error
 from os import error
 import numpy as np
 #from sphinx import ret
@@ -13,26 +14,48 @@ from IPython.display import display
 
 ########### Algemene data analyse ############
 
-def foutpropagatie(expr, parameters, sigmas):
-    # onveranderd
+def foutpropagatie(expr, parameters):
+    """
+    Geeft formule voor foutenpropagatie in expr
+    -------------------------
+    @param:
+     - expr: De vergelijking waar waardes ingevuld worden
+     - parameters: Een lijst van datapunt objecten die ingevuld moeten worden in de vergelijking
+    -------------------------
+    @return:
+     - sigmakwadr: Een formule om de nieuwe variantie te bepalen
+    """
     sigmakwadr = 0
     for indx in range(len(parameters)):
-        param = sp.diff(expr, parameters[indx])
-        sigm = sigmas[indx]
-        sigmakwadr += (param*sigm)**2
+        param = sp.diff(expr, parameters[indx].get_naam())
+        variance = parameters[indx].get_variance()
+        sigmakwadr += (param**2)*variance
     return sigmakwadr
-
-def data_analyse(equation, param_values, eval_name, detailed_logs = False):
+    
+def data_analyse(equation, param_values, eval_name: sp.symbols, detailed_logs = False):
+    """
+    Voert foutenpropagatie uit op een vergelijking met waardes param_values
+    ----------------------------
+    @param:
+     - equation: De vergelijking waarop foutenpropagatie moet gebeuren 
+     - param_values: De waardes die ingevuld moeten worden in de vergelijking, als lijst van datapunt objecten, of als meting object (nog niet geïmplementeerd)
+     - eval_name: De naam (een sympy symbool) van het resultaat
+    ----------------------------
+    @return:
+     - Een datapunt object met waarde en fout bepaald via de vergelijking, normale verdeling en naam bepaald door eval_name
+    """
     # param_values is een lijst van datapunt objecten
     sigmas = []
     parameters = []
     substitutie = []
-    vgl = equation
+    vgl = equation.copy()
     for param_value in param_values:
         sigmas.append(param_value.get_variance()**0.5)
         parameters.append(param_value.get_naam())
         substitutie.append((param_value.get_naam(), param_value.get_val()))
     sigmakwadr = foutpropagatie(vgl.formule, parameters, sigmas)
+        substitutie.append((param_value.get_naam(), param_value.get_val()))
+    sigmakwadr = foutpropagatie(vgl.formule, param_values)
     for subs in substitutie:
         sigmakwadr = sigmakwadr.subs(subs[0],subs[1])
     waarde = vgl.calculate(substitutie)
@@ -45,9 +68,15 @@ def data_analyse(equation, param_values, eval_name, detailed_logs = False):
 
 def multiple_analysis(equation, params_list, eval_name, detailed_logs = False):
     """
-    params_list is een lijst van lijsten van datapunt objecten
-    
-    return: een np.array van datapunten
+    Voert foutenpropagatie uit op een lijst van metingen (of dataset)
+    ------------------------
+    @param:
+     - equation: De vergelijking die ingevuld moet worden
+     - params_list: De data die ingevuld moet worden, als matrix van datapunt objecten, lijst van meting objecten (niet geïmplementeerd)
+                    of als dataset object (niet geïmplementeerd)
+     - eval_name: De naam van het resultaat
+    @return: 
+     - een np.array van datapunten    
     """
     data = []
     for params in params_list:
@@ -55,77 +84,126 @@ def multiple_analysis(equation, params_list, eval_name, detailed_logs = False):
     dat = np.array(data)
     return dat
 
-def gemiddelde(waarden): #bepaalt het gemiddelde van N getallen en de fout op het gemiddelde
-                         #kan ook werken met een array van arrays van getallen (meerdere berekeningen tegelijk)
+def gemiddelde(waarden: list, naam = None):
+    """
+    Berekent het gemiddelde en de fout er op van een lijst (of matrix) meetwaarden of datapunt objecten
+    ------------------------
+    @param:
+     - waarden: De lijst (of matrix) van waarden waarvan het gemiddelde moet bepaald worden. Gemiddeldes worden rij per rij bepaald
+     - naam: Een naam (of een lijst van namen) voor de resultaten van de berekening. Als waarden bestaat uit datapunten wordt de naam
+                datapunt.naam _ gem genomen
+    ------------------------
+    @return:
+     - (Lijst van) datapunt object(en) met naam 
+    """
     if type(waarden) != np.array:
         waarden = np.array(waarden)
     dimensies = waarden.ndim
+    datapunten = False
+    if dimensies == 1:
+        if type(waarden[0]) == classes.datapunt:
+            datapunten = True
+            for i in range(len(waarden)):
+                waarden[i] = waarden[i].get_val()
+    elif dimensies == 2:
+        if type(waarden[0][0]) == classes.datapunt:
+            datapunten = True
+            for i in range(len(waarden)):
+                for j in range(len(waarden[i])):
+                    waarden[i][j] = waarden[i][j].get_val()
+    else:
+        raise Error("Fix dimensies pls, enkel 1 of 2 werken!")
+    if naam == None and not datapunten:
+        raise Error("Geef een naam in als waarden geen datapunten zijn!")
     if dimensies == 1:
         som = np.sum(waarden)
         N = len(waarden)
         avg = som/N
     elif dimensies == 2:
-        som = np.array([np.sum(waarden[i]) for i in range(len(waarden))])
+        som = np.sum(waarden, axis=0)
         N = len(waarden[0])
-        avg = som/N
+        avg = som.T/N
     sigmasqsom = 0
-    waardentranspose = waarden.T
-    for elem in waardentranspose:
-        sigmasqsom += (elem-avg)**2
+    for element in waarden:
+        sigmasqsom += (avg - element)**2
     sigmasqsom /= N*(N-1)
     sigma = np.sqrt(sigmasqsom)
-    terug = 'eej foemp fix uw dimensies'
     if dimensies == 1:
-        terug = [avg, sigma, 'S']
+        if naam == None:
+            naam = sp.symbols(str(waarden[0].naam) +"_gem")
+        else:
+            if type(naam) != sp.symbols:
+                naam = sp.symbols(naam)
+        terug = classes.datapunt(avg, sigma, naam)
     elif dimensies == 2:
-        terug = [[avg[i],sigma[i],'S'].copy() for i in range(len(waarden))]
+        if naam == None:
+            naam = [sp.symbols(str(waarden[0][i].naam) +"_gem") for i in range(len(waarden[0]))]
+        else:
+            if type(naam) != sp.symbols:
+                naam = sp.symbols(naam)
+        terug = [classes.datapunt([avg[i],sigma[i],naam[i]]) for i in range(len(waarden[0]))]
     return terug
 
-def mu_sigma(waarden): #waarden met hun fout; bepaalt het gemiddelde en de meetfout (statistisch en/of meetfout)
-    fout = waarden[0][1]
-    gewogengemiddelde = False
-    for waarde in waarden:
-        if waarde[1] != fout:
-            gewogengemiddelde = True
-    if not gewogengemiddelde:
-        #gemiddelde
-        value = 0
-        n = len(waarden)
+def mu_sigma(waarden: list, naam = None):
+    """
+    Berekent het gewogen gemiddelde van een set data
+    ----------------------
+    @param:
+     - waarden: een lijst (of matrix) van datapunt objecten waarvan het gewogen gemiddelde (over de kolommen) berekend wordt.
+     - naam: waarden.naam _gem als naam == None, anders de geeft het de naam van de resulterende datapunt objecten
+    ----------------------
+    @return:
+     - Een lijst (of matrix) van datapunt objecten met gegeven namen en waardes/fouten bepaald door gewogen gemiddelde (en normale verdeling)
+    """
+    if type(waarden) != np.array:
+        waarden = np.array(waarden)
+    if type(waarden[0]) != classes.datapunt and naam == None:
+        raise Error("Geef datapunt objecten, ik heb er zo veel werk in gestoken")
+    dimensies = waarden.ndim
+    if dimensies == 2:
+        if type(waarden[0][0]) != classes.datapunt:
+            raise Error("Geef datapunt objecten, ik heb er zo veel werk in gestoken")
+    vals = []
+    g_vals = []
+    if dimensies == 1:
         for waarde in waarden:
-            value += waarde[0]
-        mu = value/n
-        #standaardafwijking
-        value = 0
+            vals.append(waarde.get_val())
+            g_vals.append(1/waarde.get_variance())
+    elif dimensies == 2:
         for waarde in waarden:
-            value += (mu-waarde[0])**2
-        value /= (n-1)
-        sigma_stat = np.sqrt(value)
+            vals.append([waarde[i].get_val() for i in range(len(waarde))])
+            g_vals.append([waarde[i].get_variance() for i in range(len(waarde))])
     else:
-        value = 0
-        gewicht = 0
-        n = len(waarden)
-        for waarde in waarden:
-            gew = 1/(waarde[1]**2)
-            value += gew*waarde[0]
-            gewicht += gew
-        mu = value/gewicht
-        sigma = 1/sp.sqrt(gewicht)
-        return (mu, sigma, 'fout bij niet-constante meetfout')
-    #welke fout teruggeven?
-    if sigma_stat/fout > 10:
-        print('statistische fout')
-        return (mu, sigma_stat, 'N')
-    elif sigma_stat == 0:
-        print('fout van het meettoestel')
-        return (mu, fout, 'U')
-    elif fout/sigma_stat > 10:
-        print('fout van het meettoestel')
-        return (mu, fout, 'U')
-    else:
-        return (mu, sigma_stat, fout)
+        raise Error("Kijk bro, drie (of 0) dimensies is te veel (of te weinig)")
+    vals = np.array(vals)
+    g_vals = np.array(g_vals)
     
+    if dimensies == 1:
+        if naam == None:
+            naam = sp.symbols(str(waarden[0].naam) +"_gem")
+        else:
+            if type(naam) != sp.symbols:
+                naam = sp.symbols(naam)
+        teller = np.sum(vals * g_vals)
+        noemer = np.sum(g_vals)
+        eind_waarde = teller/noemer
+        eind_fout = 1/np.sqrt(noemer)
+        outp = classes.datapunt(eind_waarde, eind_fout, naam)
+    elif dimensies == 2:
+        if naam == None:
+            naam = [sp.symbols(str(waarden[0][i].naam) +"_gem") for i in range(len(waarden[0]))]
+        else:
+            if type(naam) != sp.symbols:
+                naam = sp.symbols(naam)
+        teller = np.sum(vals * g_vals, axis= 0)
+        noemer = np.sum(g_vals, axis = 0)
+        eind_waarde = teller/noemer
+        eind_fout = 1/np.sqrt(noemer)
+        outp = [classes.datapunt([eind_waarde[i],eind_fout[i],naam[i]]) for i in range(len(waarden))]
+    return outp
 
-
+        
+    
 ########### Fit code - 1D ############
 def chi2_bereken(param, x_val, y_val, y_err, soort_fout, model):
     """Geeft chi^2 waarde in functie van de parameters
@@ -190,7 +268,7 @@ def uncertainty_intervals(min_values, x_val, y_val, y_err,  chi_min, model, soor
     return intervallen
 
 def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat", 
-        x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", printen = "False"): #Veel van deze inputs doen niets, kmoet nog pretty
+        x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", detailed_logs = False): #Veel van deze inputs doen niets, kmoet nog pretty
     #print code schrijven
     #TODO: cas_matrix support maken
     #TODO: ML code schrijven
@@ -210,6 +288,9 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
         outp = parameters[i] + " heeft als waarde: %.5g + %.5g - %.5g met 68%% betrouwbaarheidsinterval: [%.5g, %.5g] "%(min_param[i], top, bot, betrouwb_int[i][0], betrouwb_int[i][1])
         print(outp)
 
+    if detailed_logs:
+        for i in range(len(min_param)):
+            plot_chi2((betrouwb_int[i], i), min_param, x_val, y_val, y_err, soort_fout, model)
     nu = len(x_val) - len(parameters)
     p_waarde = chi2.sf(chi_min, df=nu)
     chi_red = chi_min/nu
@@ -225,21 +306,18 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
     for i in range(0, len(parameters)):
         outp.append([min_param[i], fouten[i], 'S'])
     return outp
-    #Werkt nog niet, kmoet de code nog algemeen schrijven :(
-    #if printen:
-    #    print("##################### Pretty print #####################")
-    #    pretty_print_results(x_val, y_val, y_err, chi_min, min_param, betrouwb_int, parameters)
+
 
 def plot_chi2(plotwaarde, param, x_val, y_val, y_err, soort_fout, model):
     """
     plotwaarde = (range, indx)
     range is de linspace waarover geplot wordt bij de parameter met index indx
     """
-    rangge, indx = plotwaarde
-
+    [bot, top], indx = plotwaarde
+    rangge = np.linspace(bot, top, 10000)
     fig, ax = plt.subplots(1,1)
     y_as = []
-    for i in range(len(rangge)):
+    for i in rangge:
         parami = param.copy()
         parami[indx] = i
         y_as.append(chi2_bereken(parami, x_val, y_val, y_err, soort_fout, model))
@@ -275,22 +353,22 @@ def  chi2_bereken_2D(hybrid, x_val, y_val, x_variance, y_variance, model, n_para
     chi_2_val = np.sum(x_diffs + y_diffs)
     return chi_2_val
 
-def plot_chi2_2D(plotwaarde, param, x_val, y_val, y_err, soort_fout, model):
+def plot_chi2_2D(plotwaarde, min_param, x_val, y_val, x_variance, y_variance, model, n_param):
     """
     plotwaarde = (range, indx)
     range is de linspace waarover geplot wordt bij de parameter met index indx
     """
-    rangge, indx = plotwaarde
-
+    [bot, top], indx = plotwaarde
+    rangge = np.linspace(bot, top, 10000)
     fig, ax = plt.subplots(1,1)
     y_as = []
-    for i in range(len(rangge)):
-        parami = param.copy()
+    for i in rangge:
+        parami = min_param.copy()
         parami[indx] = i
-        y_as.append(chi2_bereken_2D(parami, x_val, y_val, y_err, soort_fout, model))
+        y_as.append(chi2_bereken_2D(parami, x_val, y_val, x_variance, y_variance, model, n_param))
     y_as = np.array(y_as)
     ax.plot(rangge, y_as)
-    ax.set_xlabel('parameter op index'+str(i))
+    ax.set_xlabel('Parameter op index'+str(indx))
     ax.set_ylabel('$\\chi^2$')
     plt.tight_layout();plt.show()
 
@@ -384,15 +462,7 @@ def find_sigma_values_2D(x_val, y_val, x_variance,  y_variance, hybrid, te_check
         return [-5*grootteorde, 5*grootteorde]
     else:
         print('WARNING: UNEXPECTED OCCURENCE HAS HAPPENED, PLEASE PROCEED DEBUGGING functies.find_sigma_values_2D')
-        print('functies.find_sigma_values_2D has failed. The program has resulted to outputting racism')
-        from time import sleep
-        sleep(1)
-        import winsound
-        for i in range(1000):
-            winsound.PlaySound("SystemExit", winsound.SND_ALIAS)
-            print('neger')
-
-        return "negernegerneger"
+        return [None, None]
 
 def uncertainty_intervals_2D(min_hybrid, x_val, y_val, x_variance, y_variance,  chi_min, model, n_param, grootteorde, detailed_logs = False):
     intervallen = []
@@ -481,7 +551,9 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
             foutjes.append((bot, top))
             outp = str(parameters[i]) + " heeft als waarde: %.5g + %.5g - %.5g met 68%% betrouwbaarheidsinterval: [%.5g, %.5g] "%(min_param[i], top, bot, betrouwb_int[i][0], betrouwb_int[i][1])
             print(outp)
-
+        if detailed_logs:
+            for i in range(n_param):
+                plot_chi2_2D((betrouwb_int[i], i), min_param, x_val, y_val, x_variance, y_variance, model, n_param)
         nu = len(x_val) - n_param
         p_waarde = chi2.sf(chi_min, df=nu)
         chi_red = chi_min/nu
