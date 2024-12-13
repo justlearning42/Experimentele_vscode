@@ -22,24 +22,28 @@ def foutpropagatie(expr, parameters, sigmas):
         sigmakwadr += (param*sigm)**2
     return sigmakwadr
 
-def data_analyse(equation, param_values, eval_name):
+def data_analyse(equation, param_values, eval_name, detailed_logs = False):
     # param_values is een lijst van datapunt objecten
-    fouten = []
+    sigmas = []
     parameters = []
     substitutie = []
     vgl = equation
     for param_value in param_values:
-        fouten.append(param_value.variance)
+        sigmas.append(param_value.get_variance()**0.5)
         parameters.append(param_value.get_naam())
         substitutie.append((param_value.get_naam(), param_value.get_val()))
-    sigmakwadr = foutpropagatie(vgl.formule, parameters, fouten)
+    sigmakwadr = foutpropagatie(vgl.formule, parameters, sigmas)
     for subs in substitutie:
         sigmakwadr = sigmakwadr.subs(subs[0],subs[1])
     waarde = vgl.calculate(substitutie)
     sigmakwadr = sigmakwadr.evalf()
-    return classes.datapunt(waarde, sigmakwadr**0.5, eval_name, verdeling = "Normaal")
+    datapt = classes.datapunt(waarde, sigmakwadr**0.5, eval_name, verdeling = "Normaal")
+    if detailed_logs:
+        print(sigmakwadr)
+        print(datapt)
+    return datapt
 
-def multiple_analysis(equation, params_list, eval_name):
+def multiple_analysis(equation, params_list, eval_name, detailed_logs = False):
     """
     params_list is een lijst van lijsten van datapunt objecten
     
@@ -47,7 +51,7 @@ def multiple_analysis(equation, params_list, eval_name):
     """
     data = []
     for params in params_list:
-        data.append(data_analyse(equation, params, eval_name))
+        data.append(data_analyse(equation, params, eval_name, detailed_logs))
     dat = np.array(data)
     return dat
 
