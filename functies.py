@@ -346,9 +346,6 @@ def  chi2_bereken_2D(hybrid, x_val, y_val, x_variance, y_variance, model, n_para
         chi_2_val: De chi^2 waarde van het model gegeven de waardes voor de parameters uit param.
         
     """
-    print('die data uit chi2')
-    print(hybrid)
-    print(n_param)
     param = hybrid[:n_param]
     x_guesses = hybrid[n_param: ]
     x_diffs = ((x_val - x_guesses)**2)/x_variance
@@ -494,7 +491,7 @@ def jackknife_parameterschattingen(model, initial_vals, n_param, x_val, y_val, x
     jackknife_standard_error = np.sqrt(jackknife_variance/num_points)
     return (jackknife_estimation, jackknife_standard_error)
 
-def plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, parameter_vals, chi_2, p, save_name = None, size = None, savefig = False):
+def plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, parameter_vals, chi_2, p, save_name = None, size = None, savefig = False,fontsize = 5, titlesize = None, axsize = None):
     if size is None:
         fig, ax = plt.subplots(1,1, figsize = (10,10))
     else:
@@ -503,12 +500,16 @@ def plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel
                 fmt="o", label = "Datapunten", color = "k", ecolor= "k", elinewidth=0.8, capsize=1)
     length = np.max(x_val) - np.min(x_val)
     t = np.linspace(np.min(x_val) - length/20, np.max(x_val) + length/20, 100000)
-    model_label = "Model waardes, \n $\chi^2_{red}$ = %s, p = %s" %(chi_2, p)
+    model_label = "Model waardes, \n $\chi^2_{red}$ = %.2f, p = %.2f" %(chi_2, p)
     ax.plot(t, model(t, parameter_vals), 'r--', label = model_label)
-    ax.set_xlabel(x_as_titel)
-    ax.set_ylabel(y_as_titel)
-    ax.set_title(titel)
-    ax.legend()
+    if axsize is None:
+        axsize = fontsize
+    ax.set_xlabel(x_as_titel, fontsize = axsize)
+    ax.set_ylabel(y_as_titel, fontsize = axsize)
+    if titlesize is None:
+        titlesize = fontsize
+    ax.set_title(titel,fontsize = titlesize)
+    ax.legend(fontsize = fontsize)
     if save_name is not None:
         plt.savefig(save_name)
     if savefig:
@@ -518,7 +519,7 @@ def plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel
 
 def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance, grootteorde = 1,
         x_as_titel = "X-as", y_as_titel = "Y-as", titel = "Fit", figure_name = None, size = None,
-        error_method = "Old", savefig = False, detailed_logs = False): 
+        error_method = "Old", savefig = False, detailed_logs = False, fontsize = 18, titlesize = 20, axsize = 16): 
     """
     grootteorde geeft een schatting van de grootteorde van de parameters
     """
@@ -572,7 +573,10 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
         outp = []
         for i in range(0, len(parameters)):
             outp.append([min_param[i], fouten[i], 'S'])
-        plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, min_param, chi_red, p_waarde, figure_name, size)
+        if not fontsize is None:
+            plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, min_param, chi_red, p_waarde, figure_name, size,fontsize = fontsize, titlesize=titlesize,axsize=axsize)
+        else:
+            plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, min_param, chi_red, p_waarde, figure_name, size,titlesize=titlesize,axsize=axsize)
         return outp
     elif error_method == "Jackknife":
         Jackknife_result = jackknife_parameterschattingen(model, initial_vals, n_param, x_val, y_val, x_variance, y_variance, min_param)
@@ -684,16 +688,31 @@ def test_mu1ismu2(meting1, meting2, n1, n2, p_waarde = 0.05, return_p = False, c
 
 ######## latex prints #########
 
-def latex_print_tabel(meetwaarden, namen):
+def latex_print_tabel(meetwaarden, namen, tabletype = 'row'):
     """
     namen = lijst [param1naam, param2naam, param3naam, ...], de hoofdingen van de tabel
     meetwaarden = matrix [ [param1meting1, param2meting1, param3meting1,...],
                            [param1meting2, param2meting2, param3meting3,...],
                         ]
                 met elke paramimetingj = [waarde, fout] (het standaard formaat)
+
+    tabletype = 'row' / 'col'
+    output:
+        een latex tabel
+        elke rij komt overeen met een rij in de tabel bij 'row'
+                                  een kolom in de tabel bij 'col'
     """
-
-
+    
+    if tabletype == 'col':
+        printmat = []
+        for kolom in range(len(meetwaarden[0])):
+            kol = []
+            for rij in range(len(meetwaarden)):
+                kol.append(meetwaarden[rij][kolom])
+            printmat.append(kol.copy())
+        meetwaarden = printmat.copy()
+    elif tabletype != 'row':
+        raise ValueError('EEJ FOEMP LEES DE DOCUMENTATIE')
     print('\\begin{table}[h!]')
     tabular = '\\begin{tabular}{' + '|c'*len(namen) + '|}'
     print(tabular)
@@ -771,6 +790,15 @@ def datapunt_to_vector(datapunt):
     fout = datapunt.get_fout()
     verdeling = datapunt.get_verdeling()
     return [waarde, fout, verdeling]
+
+def datapuntmatrix_to_matrix(datalijst):
+    """
+    Input: een matrix [[param1datapunt1, param1datapunt2, ...],[paramZdatapunt1, param2datapunt2,...]]
+    Output: dezelfde matrix maar elk datapunt is een vector
+    """
+    matrix = [[datapunt_to_vector(punt) for punt in kolom]
+              for kolom in datalijst]
+    return matrix
 
 def vector_to_datapunt(vector, variabele):
     """
