@@ -542,7 +542,7 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
             print(outp)
         if detailed_logs:
             for i in range(n_param):
-                plot_chi2_2D((betrouwb_int[i], i), min_param, x_val, y_val, x_variance, y_variance, model, n_param)
+                plot_chi2_2D((betrouwb_int[i], i), min_hybrid, x_val, y_val, x_variance, y_variance, model, n_param)
         nu = len(x_val) - n_param
         p_waarde = chi2.sf(chi_min, df=nu)
         chi_red = chi_min/nu
