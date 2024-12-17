@@ -148,6 +148,8 @@ class vergelijking:
         veranderd de interne representatie
         """
         variabelen = set()
+        if substituties[0] == ():
+            return self
         for substitutie in substituties:
             if substitutie[0] not in self.formule.free_symbols:
                 #raise "Substitueer enkel waardes in de vgl"
