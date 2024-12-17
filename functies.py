@@ -31,8 +31,8 @@ def foutpropagatie(expr, parameters):
         variance = parameters[indx].get_variance()
         sigmakwadr += (param**2)*variance
     return sigmakwadr
-
-def data_analyse(equation, param_values, eval_name: sp.symbols):
+    
+def data_analyse(equation, param_values, eval_name: sp.symbols, detailed_logs = False):
     """
     Voert foutenpropagatie uit op een vergelijking met waardes param_values
     ----------------------------
@@ -44,18 +44,29 @@ def data_analyse(equation, param_values, eval_name: sp.symbols):
     @return:
      - Een datapunt object met waarde en fout bepaald via de vergelijking, normale verdeling en naam bepaald door eval_name
     """
+    # param_values is een lijst van datapunt objecten
+    sigmas = []
+    parameters = []
     substitutie = []
     vgl = equation.copy()
     for param_value in param_values:
+        sigmas.append(param_value.get_variance()**0.5)
+        parameters.append(param_value.get_naam())
         substitutie.append((param_value.get_naam(), param_value.get_val()))
+    sigmakwadr = foutpropagatie(vgl.formule, parameters, sigmas)
+    substitutie.append((param_value.get_naam(), param_value.get_val()))
     sigmakwadr = foutpropagatie(vgl.formule, param_values)
     for subs in substitutie:
         sigmakwadr = sigmakwadr.subs(subs[0],subs[1])
     waarde = vgl.calculate(substitutie)
     sigmakwadr = sigmakwadr.evalf()
-    return classes.datapunt(waarde, sigmakwadr**0.5, eval_name, verdeling = "Normaal")
+    datapt = classes.datapunt(waarde, sigmakwadr**0.5, eval_name, verdeling = "Normaal")
+    if detailed_logs:
+        print(sigmakwadr)
+        print(datapt)
+    return datapt
 
-def multiple_analysis(equation, params_list, eval_name):
+def multiple_analysis(equation, params_list, eval_name, detailed_logs = False):
     """
     Voert foutenpropagatie uit op een lijst van metingen (of dataset)
     ------------------------
@@ -69,7 +80,7 @@ def multiple_analysis(equation, params_list, eval_name):
     """
     data = []
     for params in params_list:
-        data.append(data_analyse(equation, params, eval_name))
+        data.append(data_analyse(equation, params, eval_name, detailed_logs))
     dat = np.array(data)
     return dat
 
