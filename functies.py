@@ -500,7 +500,7 @@ def plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel
                 fmt="o", label = "Datapunten", color = "k", ecolor= "k", elinewidth=0.8, capsize=1)
     length = np.max(x_val) - np.min(x_val)
     t = np.linspace(np.min(x_val) - length/20, np.max(x_val) + length/20, 100000)
-    model_label = "Model waardes, \n $\chi^2_{red}$ = %.2f, p = %.2f" %(chi_2, p)
+    model_label = "Model waardes, \n $\chi^2_{red}$ = %g3, p = %g3 %%" %(chi_2, p*100)
     ax.plot(t, model(t, parameter_vals), 'r--', label = model_label)
     if axsize is None:
         axsize = fontsize
