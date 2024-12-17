@@ -53,7 +53,8 @@ def data_analyse(equation, param_values, eval_name: sp.symbols, detailed_logs = 
         sigmas.append(param_value.get_variance()**0.5)
         parameters.append(param_value.get_naam())
         substitutie.append((param_value.get_naam(), param_value.get_val()))
-    sigmakwadr = foutpropagatie(vgl.formule, parameters, sigmas)
+
+    sigmakwadr = foutpropagatie(vgl.formule, param_values)
     substitutie.append((param_value.get_naam(), param_value.get_val()))
     sigmakwadr = foutpropagatie(vgl.formule, param_values)
     for subs in substitutie:
@@ -345,6 +346,9 @@ def  chi2_bereken_2D(hybrid, x_val, y_val, x_variance, y_variance, model, n_para
         chi_2_val: De chi^2 waarde van het model gegeven de waardes voor de parameters uit param.
         
     """
+    print('die data uit chi2')
+    print(hybrid)
+    print(n_param)
     param = hybrid[:n_param]
     x_guesses = hybrid[n_param: ]
     x_diffs = ((x_val - x_guesses)**2)/x_variance
