@@ -54,7 +54,7 @@ def data_analyse(equation, param_values, eval_name: sp.symbols, detailed_logs = 
         parameters.append(param_value.get_naam())
         substitutie.append((param_value.get_naam(), param_value.get_val()))
     sigmakwadr = foutpropagatie(vgl.formule, parameters, sigmas)
-        substitutie.append((param_value.get_naam(), param_value.get_val()))
+    substitutie.append((param_value.get_naam(), param_value.get_val()))
     sigmakwadr = foutpropagatie(vgl.formule, param_values)
     for subs in substitutie:
         sigmakwadr = sigmakwadr.subs(subs[0],subs[1])
