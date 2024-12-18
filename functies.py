@@ -30,6 +30,7 @@ def foutpropagatie(expr, parameters):
         param = sp.diff(expr, parameters[indx].get_naam())
         variance = parameters[indx].get_variance()
         sigmakwadr += (param**2)*variance
+    #display(sigmakwadr)
     return sigmakwadr
     
 def data_analyse(equation, param_values, eval_name: sp.symbols, detailed_logs = False):
@@ -44,18 +45,15 @@ def data_analyse(equation, param_values, eval_name: sp.symbols, detailed_logs = 
     @return:
      - Een datapunt object met waarde en fout bepaald via de vergelijking, normale verdeling en naam bepaald door eval_name
     """
-    # param_values is een lijst van datapunt objecten
     sigmas = []
     parameters = []
     substitutie = []
     vgl = equation.copy()
+    #print(param_values)
     for param_value in param_values:
         sigmas.append(param_value.get_variance()**0.5)
         parameters.append(param_value.get_naam())
         substitutie.append((param_value.get_naam(), param_value.get_val()))
-
-    sigmakwadr = foutpropagatie(vgl.formule, param_values)
-    substitutie.append((param_value.get_naam(), param_value.get_val()))
     sigmakwadr = foutpropagatie(vgl.formule, param_values)
     for subs in substitutie:
         sigmakwadr = sigmakwadr.subs(subs[0],subs[1])
