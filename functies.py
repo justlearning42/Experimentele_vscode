@@ -352,7 +352,7 @@ def  chi2_bereken_2D(hybrid, x_val, y_val, x_variance, y_variance, model, n_para
     chi_2_val = np.sum(x_diffs + y_diffs)
     return chi_2_val
 
-def plot_chi2_2D(plotwaarde, min_param, x_val, y_val, x_variance, y_variance, model, n_param):
+def plot_chi2_2D(plotwaarde, min_param, x_val, y_val, x_variance, y_variance, model, n_param, chi_min):
     """
     plotwaarde = (range, indx)
     range is de linspace waarover geplot wordt bij de parameter met index indx
@@ -366,9 +366,12 @@ def plot_chi2_2D(plotwaarde, min_param, x_val, y_val, x_variance, y_variance, mo
         parami[indx] = i
         y_as.append(chi2_bereken_2D(parami, x_val, y_val, x_variance, y_variance, model, n_param))
     y_as = np.array(y_as)
-    ax.plot(rangge, y_as)
+    ax.plot(rangge, y_as, label = "$\\chi^2$ in functie van param")
+    ax.errorbar([min_param[indx]], [chi_min], fmt = "o", label = "Optimale punt", color = "k")
+    ax.plot(rangge, np.full(len(rangge), chi_min + chi2.ppf(0.68, df=n_param)), label = "Minimale $\\chi^2$ plus 1$\\sigma$")
     ax.set_xlabel('Parameter op index'+str(indx))
     ax.set_ylabel('$\\chi^2$')
+    ax.legend()
     plt.tight_layout();plt.show()
 
 def initial_vals_2D(x_val, y_val, initial_vals):
@@ -579,12 +582,15 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
             foutjes.append((bot, top))
             outp = str(parameters[i]) + " heeft als waarde: %.5g + %.5g - %.5g met 68%% betrouwbaarheidsinterval: [%.5g, %.5g] "%(min_param[i], top, bot, betrouwb_int[i][0], betrouwb_int[i][1])
             print(outp)
-        if detailed_logs:
-            for i in range(n_param):
-                plot_chi2_2D((betrouwb_int[i], i), min_hybrid, x_val, y_val, x_variance, y_variance, model, n_param)
         nu = len(x_val) - n_param
         p_waarde = chi2.sf(chi_min, df=nu)
         chi_red = chi_min/nu
+        if detailed_logs:
+            for i in range(n_param):
+                top = betrouwb_int[i][1] - min_param[i]
+                bot = min_param[i] - betrouwb_int[i][0]
+                plot_chi2_2D(([betrouwb_int[i][0] -bot*0.1, betrouwb_int[i][1] + top*0.1], i), min_hybrid, x_val, y_val, x_variance, y_variance, model, n_param, chi_min)
+        
         print("De p-waarde voor de hypothese test dat het model zinvol is, wordt gegeven door: %.5g"%p_waarde)
         print("De gereduceerde chi^2 waarde is: %.5g"%chi_red)
         fouten = []
@@ -597,9 +603,9 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
         for i in range(0, len(parameters)):
             outp.append([min_param[i], fouten[i], 'S'])
         if not fontsize is None:
-            plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, min_param, chi_red, p_waarde, figure_name, size,fontsize = fontsize, titlesize=titlesize,axsize=axsize)
+            plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, min_param, chi_red, p_waarde, figure_name, size,savefig=savefig, fontsize = fontsize, titlesize=titlesize,axsize=axsize)
         else:
-            plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, min_param, chi_red, p_waarde, figure_name, size,titlesize=titlesize,axsize=axsize)
+            plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, min_param, chi_red, p_waarde, figure_name, size, savefig=savefig ,titlesize=titlesize,axsize=axsize)
         return outp
     elif error_method == "Jackknife":
         Jackknife_result = jackknife_parameterschattingen(model, initial_vals, n_param, x_val, y_val, x_variance, y_variance, min_param)
