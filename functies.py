@@ -519,7 +519,32 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
         x_as_titel = "X-as", y_as_titel = "Y-as", titel = "Fit", figure_name = None, size = None,
         error_method = "Old", savefig = False, detailed_logs = False, fontsize = 18, titlesize = 20, axsize = 16): 
     """
-    grootteorde geeft een schatting van de grootteorde van de parameters
+    OUTDATED CODE, GEBRUIK NIEUWERE FUNCTIES INDIEN DEZE AL GEÏMPLEMENTEERD ZIJN
+    #################################
+    @param:
+     - parameters: De parameters van het model, in een vector gegeven
+     - model: Het model dat gefit wordt. Dit dient een functie model(x, param) te zijn die in x een vector datapunten kan accepteren
+     - initial_vals: Initiële waardes voor de fitparameters
+     - x_val: Een vector met x_waardes
+     - y_val: Een vector met y_waardes van dezelfde grootte als x_val
+     - x_variance: De varianties van de x_waardes, in dezelfde volgorde en van dezelfde lengte als x_val
+     - y_variance: De varianties van de y_waardes, in dezelfde volgorde en van dezelfde lengte als y_val
+    
+    @kwargs:
+     - grootteorde = 1: Geeft een schatting van de grootteorde van de fitparameters
+     - x_as_titel = "X-as": De titel van de x-as van de grafiek van de datapunten en de fit
+     - y_as_titel = "Y-as": De titel van de y-as van de grafiek van de datapunten en de fit
+     - titel = "Fit": De titel van de grafiek van de datapunten en de fit
+     - figure_name = None: If not None, geeft de naam waaronder de grafiek opgeslagen moet worden
+     - size = None: If not None, geeft de grootte van de grafiek
+     - error_method = "Old": Geeft de methode waarmee gefit moet worden, is "Old" of "Jacknife" (Jacknife werkt momenteel nogal slecht)
+     - savefig = False: If True, slaag de figuur met de fit op onder de naam "titel.png"
+     - detailed_logs = False: If True, geeft gedetaileerd logs van het fitprocess
+     - fontsize, titlesize, axsize: Geven fontgroottes van respectievelijk de legende, titel en assen.
+    #############################################################
+    
+    @return:
+     - outp: Een matrix van de vorm [[min_param[i], param_fout[i], "S"]]
     """
     #Veel van deze inputs doen niets, kmoet nog pretty
     #print code schrijven
