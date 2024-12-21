@@ -204,7 +204,7 @@ class datapunt:
             raise TypeError
         self.naam = variabele
         self.verdeling = verdeling
-        if verdeling == "Normaal" or verdeling == "N":
+        if verdeling == "Normaal" or verdeling == "N" or verdeling == 'S':
             self.pmfout = fout
             self.variance = fout**2
         elif verdeling == "Uniform" or verdeling == "U":

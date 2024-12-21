@@ -833,6 +833,7 @@ def vector_to_datapunt(vector, variabele):
             raise TypeError("variabele moet een sp.symbol zijn")
     waarde, fout, soort_fout = vector
     return classes.datapunt(waarde, fout, variabele, soort_fout)
+
 def matrix_to_datapunten(matrix, variabele):
     """
     Input: een matrix in dataformaat, en de variabele die zij representeren
