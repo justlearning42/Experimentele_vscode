@@ -240,7 +240,7 @@ def minimize_chi2(model, initial_vals, x_val, y_val, y_err, soort_fout = 'Stat')
     """
     chi2_func = lambda *args: chi2_bereken(*args)
     gok = initial_vals(x_val, y_val)
-    mini = minimize(chi2_func, gok, args = (x_val, y_val, y_err, soort_fout, model))
+    mini = minimize(chi2_func, gok, args = (x_val, y_val, y_err, soort_fout, model), method="Nelder-Mead")
     return mini
 
 def chi2_in_1_var(var, ind_var, x_val, y_val, y_err, param_values, chi_min, model, soort_fout = "Stat"):
@@ -287,12 +287,13 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
         outp = parameters[i] + " heeft als waarde: %.5g + %.5g - %.5g met 68%% betrouwbaarheidsinterval: [%.5g, %.5g] "%(min_param[i], top, bot, betrouwb_int[i][0], betrouwb_int[i][1])
         print(outp)
 
-    if detailed_logs:
-        for i in range(len(min_param)):
-            plot_chi2((betrouwb_int[i], i), min_param, x_val, y_val, y_err, soort_fout, model)
     nu = len(x_val) - len(parameters)
     p_waarde = chi2.sf(chi_min, df=nu)
     chi_red = chi_min/nu
+    if detailed_logs:
+        for i in range(len(min_param)):
+            plot_chi2((betrouwb_int[i], i), min_param, x_val, y_val, y_err, soort_fout, model, len(parameters), chi_min)
+    
     print("De p-waarde voor de hypothese test dat het model zinvol is, wordt gegeven door: %.5g"%p_waarde)
     print("De gereduceerde chi^2 waarde is: %.5g"%chi_red)
     fouten = []
@@ -307,7 +308,7 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
     return outp
 
 
-def plot_chi2(plotwaarde, param, x_val, y_val, y_err, soort_fout, model):
+def plot_chi2(plotwaarde, min_param, x_val, y_val, y_err, soort_fout, model, n_param, chi_min):
     """
     plotwaarde = (range, indx)
     range is de linspace waarover geplot wordt bij de parameter met index indx
@@ -317,13 +318,16 @@ def plot_chi2(plotwaarde, param, x_val, y_val, y_err, soort_fout, model):
     fig, ax = plt.subplots(1,1)
     y_as = []
     for i in rangge:
-        parami = param.copy()
+        parami = min_param.copy()
         parami[indx] = i
         y_as.append(chi2_bereken(parami, x_val, y_val, y_err, soort_fout, model))
     y_as = np.array(y_as)
-    ax.plot(rangge, y_as)
-    ax.set_xlabel('parameter op index'+str(i))
+    ax.plot(rangge, y_as, label = "$\\chi^2$ in functie van param")
+    ax.errorbar([min_param[indx]], [chi_min], fmt = "o", label = "Optimale punt", color = "k")
+    ax.plot(rangge, np.full(len(rangge), chi_min + chi2.ppf(0.68, df=n_param)), label = "Minimale $\\chi^2$ plus 1$\\sigma$")
+    ax.set_xlabel('Parameter op index'+str(indx))
     ax.set_ylabel('$\\chi^2$')
+    ax.legend()
     plt.tight_layout();plt.show()
 
 ########## Fit code - 2D ###########
