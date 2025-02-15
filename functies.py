@@ -228,6 +228,7 @@ def chi2_bereken(param, x_val, y_val, y_err, soort_fout, model):
     if soort_fout == "Unif":
         fouten = y_err**2 / 12
     else:
+        print(y_err)
         fouten = y_err**2
     chi_2_val = np.sum((y_val - model(x_val, param))**2 / fouten)
     return chi_2_val
