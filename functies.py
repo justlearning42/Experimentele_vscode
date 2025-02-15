@@ -181,10 +181,12 @@ def mu_sigma(waarden: list, naam = None):
     
     if dimensies == 1:
         if naam == None:
-            naam = sp.symbols(str(waarden[0].naam) +"_gem")
+            naam = sp.symbols(str(waarden[0].get_naam()) +"_gem")
         else:
-            if type(naam) != sp.symbols:
+            if type(naam) == str:
                 naam = sp.symbols(naam)
+            else:
+                raise Error("bro wtf uw naam is geen string en geen sympy.symbol")
         teller = np.sum(vals * g_vals)
         noemer = np.sum(g_vals)
         eind_waarde = teller/noemer
