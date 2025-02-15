@@ -14,7 +14,7 @@ from IPython.display import display
 
 ########### Algemene data analyse ############
 def round_to_n(x, n): #rond uw data af op n beduidende cijfers
-    return round(x, -int(np.floor(np.log10(abs(x))))+1-n) 
+    return round(x, -int(np.floor(np.log10(abs(x))))-1+n) 
 
 def foutpropagatie(expr, parameters):
     """
