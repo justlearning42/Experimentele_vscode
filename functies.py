@@ -13,6 +13,8 @@ from IPython.display import display
 
 
 ########### Algemene data analyse ############
+def round_to_n(x, n): #rond uw data af op n beduidende cijfers
+    return round(x, -int(np.floor(np.log10(abs(x))))-1+n) 
 
 def foutpropagatie(expr, parameters):
     """
@@ -179,10 +181,15 @@ def mu_sigma(waarden: list, naam = None):
     
     if dimensies == 1:
         if naam == None:
-            naam = sp.symbols(str(waarden[0].naam) +"_gem")
+            naam = sp.symbols(str(waarden[0].get_naam()) +"_gem")
         else:
-            if type(naam) != sp.symbols:
+            if type(naam) == str:
                 naam = sp.symbols(naam)
+            elif type(naam) == sp.Symbol:
+                pass
+            else:
+                tiepuh = str(type(naam))
+                raise Error("bro wtf uw naam is geen string en geen sympy.symbol maar een "+str(tiepuh))
         teller = np.sum(vals * g_vals)
         noemer = np.sum(g_vals)
         eind_waarde = teller/noemer
@@ -221,6 +228,8 @@ def chi2_bereken(param, x_val, y_val, y_err, soort_fout, model):
     if soort_fout == "Unif":
         fouten = y_err**2 / 12
     else:
+        if type(y_err) == list:
+            y_err = np.array(y_err)
         fouten = y_err**2
     chi_2_val = np.sum((y_val - model(x_val, param))**2 / fouten)
     return chi_2_val
@@ -298,10 +307,10 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
     print("De gereduceerde chi^2 waarde is: %.5g"%chi_red)
     fouten = []
     for fout in foutjes:
-        if fout[0]/fout[1] < 1.25 and fout[0]/fout[1] > 0.8:
-            fouten.append(max(fout[0], fout[1]))
+        if abs(fout[0]/fout[1]) < 1.25 and abs(fout[0]/fout[1]) > 0.8:
+            fouten.append(round_to_n(max(fout[0], fout[1]), 2))
         else:
-            fouten.append(fout)
+            fouten.append((round_to_n(fout[0],2),round_to_n(fout[1],2)))
     outp = []
     for i in range(0, len(parameters)):
         outp.append([min_param[i], fouten[i], 'S'])
