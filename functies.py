@@ -13,6 +13,8 @@ from IPython.display import display
 
 
 ########### Algemene data analyse ############
+def round_to_n(x, n): #rond uw data af op n beduidende cijfers
+    return round(x, -int(np.floor(np.log10(abs(x))))+1-n) 
 
 def foutpropagatie(expr, parameters):
     """
@@ -298,10 +300,10 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
     print("De gereduceerde chi^2 waarde is: %.5g"%chi_red)
     fouten = []
     for fout in foutjes:
-        if fout[0]/fout[1] < 1.25 and fout[0]/fout[1] > 0.8:
-            fouten.append(max(fout[0], fout[1]))
+        if abs(fout[0]/fout[1]) < 1.25 and abs(fout[0]/fout[1]) > 0.8:
+            fouten.append(round_to_n(max(fout[0], fout[1]), 2))
         else:
-            fouten.append(fout)
+            fouten.append((round_to_n(fout[0],2),round_to_n(fout[1],2)))
     outp = []
     for i in range(0, len(parameters)):
         outp.append([min_param[i], fouten[i], 'S'])
