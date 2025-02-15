@@ -185,6 +185,8 @@ def mu_sigma(waarden: list, naam = None):
         else:
             if type(naam) == str:
                 naam = sp.symbols(naam)
+            elif type(naam) == sp.Symbol:
+                pass
             else:
                 tiepuh = str(type(naam))
                 raise Error("bro wtf uw naam is geen string en geen sympy.symbol maar een "+str(tiepuh))
