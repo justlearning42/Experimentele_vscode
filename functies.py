@@ -186,7 +186,8 @@ def mu_sigma(waarden: list, naam = None):
             if type(naam) == str:
                 naam = sp.symbols(naam)
             else:
-                raise Error("bro wtf uw naam is geen string en geen sympy.symbol")
+                tiepuh = str(type(naam))
+                raise Error("bro wtf uw naam is geen string en geen sympy.symbol maar een "+str(tiepuh))
         teller = np.sum(vals * g_vals)
         noemer = np.sum(g_vals)
         eind_waarde = teller/noemer
