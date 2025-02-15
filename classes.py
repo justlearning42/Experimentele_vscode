@@ -205,6 +205,8 @@ class datapunt:
         self.naam = variabele
         self.verdeling = verdeling
         if verdeling == "Normaal" or verdeling == "N" or verdeling == 'S':
+            if type(fout) == tuple: #eigenlijk mag dit niet
+                fout = np.sqrt(abs(fout[0])**2+fout([1])**2) #kwadratisch gemiddelde nemen
             self.pmfout = fout
             self.variance = fout**2
         elif verdeling == "Uniform" or verdeling == "U":
