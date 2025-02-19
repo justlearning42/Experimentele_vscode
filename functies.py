@@ -301,9 +301,10 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
     nu = len(x_val) - len(parameters)
     p_waarde = chi2.sf(chi_min, df=nu)
     chi_red = chi_min/nu
+    initiele_waarde = initial_vals(x_val, y_val)
     if detailed_logs:
         for i in range(len(min_param)):
-            plot_chi2((betrouwb_int[i], i), min_param, x_val, y_val, y_err, soort_fout, model, len(parameters), chi_min)
+            plot_chi2((betrouwb_int[i], i), min_param, x_val, y_val, y_err, soort_fout, model, len(parameters), chi_min, initiele_waarde[i])
     
     print("De p-waarde voor de hypothese test dat het model zinvol is, wordt gegeven door: %.5g"%p_waarde)
     print("De gereduceerde chi^2 waarde is: %.5g"%chi_red)
@@ -319,13 +320,22 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
     return outp
 
 
-def plot_chi2(plotwaarde, min_param, x_val, y_val, y_err, soort_fout, model, n_param, chi_min):
+def plot_chi2(plotwaarde, min_param, x_val, y_val, y_err, soort_fout, model, n_param, chi_min, inval):
     """
     plotwaarde = (range, indx)
     range is de linspace waarover geplot wordt bij de parameter met index indx
     """
     [bot, top], indx = plotwaarde
-    rangge = np.linspace(bot, top, 10000)
+    dif = top - bot
+    param_initial = min_param.copy()
+    param_initial[indx] = inval
+    chi_initial = chi2_bereken(param_initial, x_val, y_val, y_err, soort_fout, model)
+    if bot < inval and inval < top:
+        rangge = np.linspace(bot - dif*0.05, top + dif*0.05, 10000)
+    elif inval < bot:
+        rangge = np.linspace(inval, top + dif*0.05, 10000)
+    elif top < inval:
+        rangge = np.linspace(bot - dif*0.05, inval, 10000)
     fig, ax = plt.subplots(1,1)
     y_as = []
     for i in rangge:
@@ -335,6 +345,8 @@ def plot_chi2(plotwaarde, min_param, x_val, y_val, y_err, soort_fout, model, n_p
     y_as = np.array(y_as)
     ax.plot(rangge, y_as, label = "$\\chi^2$ in functie van param")
     ax.errorbar([min_param[indx]], [chi_min], fmt = "o", label = "Optimale punt", color = "k")
+    ax.errorbar([bot, top], [chi_min + chi2.ppf(0.68, df = n_param), chi_min + chi2.ppf(0.68, df = n_param)], fmt = "o", label = "Betrouwbint", color = "r")
+    ax.errorbar([inval], [chi_initial], fmt = "o", label = "Initiële waarde met andere min_param", color = "g")
     ax.plot(rangge, np.full(len(rangge), chi_min + chi2.ppf(0.68, df=n_param)), label = "Minimale $\\chi^2$ plus 1$\\sigma$")
     ax.set_xlabel('Parameter op index'+str(indx))
     ax.set_ylabel('$\\chi^2$')
