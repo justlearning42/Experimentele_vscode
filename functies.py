@@ -14,6 +14,7 @@ from IPython.display import display
 
 ########### Algemene data analyse ############
 def round_to_n(x, n): #rond uw data af op n beduidende cijfers
+    print('test123')
     return round(x, -int(np.floor(np.log10(abs(x))))-1+n) 
 
 def foutpropagatie(expr, parameters):
@@ -250,6 +251,7 @@ def minimize_chi2(model, initial_vals, x_val, y_val, y_err, soort_fout = 'Stat')
     chi2_func = lambda *args: chi2_bereken(*args)
     gok = initial_vals(x_val, y_val)
     mini = minimize(chi2_func, gok, args = (x_val, y_val, y_err, soort_fout, model), method="Nelder-Mead")
+
     return mini
 
 def chi2_in_1_var(var, ind_var, x_val, y_val, y_err, param_values, chi_min, model, soort_fout = "Stat"):
