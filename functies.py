@@ -330,16 +330,11 @@ def plot_chi2(plotwaarde, min_param, x_val, y_val, y_err, soort_fout, model, n_p
     param_initial = min_param.copy()
     param_initial[indx] = inval
     chi_initial = chi2_bereken(param_initial, x_val, y_val, y_err, soort_fout, model)
-    if bot < inval and inval < top and top > min_param[indx]:
-        rangge = np.linspace(bot - dif*0.05, top + dif*0.05, 10000)
-    elif bot < inval and inval < min_param[indx]:
-        rangge = np.linspace(bot - dif*0.05, min_param[indx] + dif*0.05, 10000)
-    elif inval < bot and top < min_param[indx]:
-        rangge = np.linspace(bot - dif*0.05, min_param[indx] + dif*0.05, 10000)
-    elif inval < bot:
-        rangge = np.linspace(inval, top + dif*0.05, 10000)
-    elif top < inval:
-        rangge = np.linspace(bot - dif*0.05, inval, 10000)
+    lijst = [bot, inval, top, min_param[indx]]
+    dif = max(lijst) - min(lijst)
+    
+    rangge = np.linspace(min(lijst) -dif*0.05, max,lijst+dif*0.05,10000)
+
     fig, ax = plt.subplots(1,1)
     y_as = []
     for i in rangge:
