@@ -332,8 +332,8 @@ def plot_chi2(plotwaarde, min_param, x_val, y_val, y_err, soort_fout, model, n_p
     chi_initial = chi2_bereken(param_initial, x_val, y_val, y_err, soort_fout, model)
     lijst = [bot, inval, top, min_param[indx]]
     dif = max(lijst) - min(lijst)
-    
-    rangge = np.linspace(min(lijst) -dif*0.05, max,lijst+dif*0.05,10000)
+
+    rangge = np.linspace(min(lijst) -dif*0.05, max(lijst)+dif*0.05,10000)
 
     fig, ax = plt.subplots(1,1)
     y_as = []
