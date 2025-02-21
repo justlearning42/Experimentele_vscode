@@ -292,7 +292,7 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
     if fuck_mijn_pc:
         for i in range(len(min_param)):
             y_as = []
-            top = 3* betrouwb_int[i][1] -2 min_param[i] #zoek op 3 sigma's van het centrum
+            top = 3* betrouwb_int[i][1] - 2* min_param[i] #zoek op 3 sigma's van het centrum
             bot = -2*abs(min_param[i]) +3* betrouwb_int[i][0] #Zoek op 3 sigma's van het centrum
             inval = initial_vals[i]
             lijst = [top, bot, inval]
@@ -300,7 +300,7 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
             #zoek nu het np.min op een linspace op deze reeks
             for ind in rangge:
                 parami = min_param.copy()
-                parami[indx] = ind
+                parami[ind] = ind
                 y_as.append(chi2_bereken(parami, x_val, y_val, y_err, soort_fout, model))
             minimumarg = np.argmin(y_as)
             minimum = np.min(y_as)
