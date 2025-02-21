@@ -278,7 +278,7 @@ def uncertainty_intervals(min_values, x_val, y_val, y_err,  chi_min, model, soor
     return intervallen
 
 def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat", 
-        x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", detailed_logs = False): #Veel van deze inputs doen niets, kmoet nog pretty
+        x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", detailed_logs = False, fuck_mijn_pc = False): #Veel van deze inputs doen niets, kmoet nog pretty
     #print code schrijven
     #TODO: cas_matrix support maken
     #TODO: ML code schrijven
@@ -289,6 +289,24 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
     print(mini)
     
     betrouwb_int = uncertainty_intervals(min_param, x_val, y_val, y_err, chi_min, model, soort_fout)
+    if fuck_mijn_pc:
+        for i in range(len(min_param)):
+            y_as = []
+            top = 3* betrouwb_int[i][1] -2 min_param[i] #zoek op 3 sigma's van het centrum
+            bot = -2*abs(min_param[i]) +3* betrouwb_int[i][0] #Zoek op 3 sigma's van het centrum
+            inval = initial_vals[i]
+            lijst = [top, bot, inval]
+            rangge = np.linspace(min[lijst], max[lijst],10000)
+            #zoek nu het np.min op een linspace op deze reeks
+            for ind in rangge:
+                parami = min_param.copy()
+                parami[indx] = ind
+                y_as.append(chi2_bereken(parami, x_val, y_val, y_err, soort_fout, model))
+            minimumarg = np.argmin(y_as)
+            minimum = np.min(y_as)
+            if minimum < chi_min[i]:
+                print('OVERRULED MINIMUM')
+                min_param[i] = minimumarg
     print(betrouwb_int)
     foutjes = []
     for i in range(0, len(parameters)):
