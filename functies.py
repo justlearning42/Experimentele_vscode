@@ -234,7 +234,7 @@ def chi2_bereken(param, x_val, y_val, y_err, soort_fout, model):
     chi_2_val = np.sum((y_val - model(x_val, param))**2 / fouten)
     return chi_2_val
 
-def minimize_chi2(model, initial_vals, x_val, y_val, y_err, soort_fout = 'Stat'):
+def minimize_chi2(model, initial_vals, x_val, y_val, y_err, bounds = None, soort_fout = 'Stat'):
     """Minimaliseert de chi^2 waarde voor een gegeven model en een aantal datapunten
     
     Args:
@@ -249,7 +249,7 @@ def minimize_chi2(model, initial_vals, x_val, y_val, y_err, soort_fout = 'Stat')
     """
     chi2_func = lambda *args: chi2_bereken(*args)
     gok = initial_vals(x_val, y_val)
-    mini = minimize(chi2_func, gok, args = (x_val, y_val, y_err, soort_fout, model), method="Nelder-Mead")
+    mini = minimize(chi2_func, gok, bounds = bounds, args = (x_val, y_val, y_err, soort_fout, model), method="Nelder-Mead")
 
     return mini
 
@@ -297,15 +297,16 @@ def uncertainty_intervals(min_values, x_val, y_val, y_err,  chi_min, model, soor
         intervallen.append(find_sigma_values(x_val, y_val, y_err, min_values, i, chi_min, soort_fout, model, fuck_CPU=fuck_CPU))
     return intervallen
 
-def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat", 
+def fit(parameters, model, initial_vals, x_val, y_val, y_err, initial_range = None, soort_fout = "Stat", 
         x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", detailed_logs = False, fuck_mijn_pc = False, fuck_CPU = False): #Veel van deze inputs doen niets, kmoet nog pretty
     #print code schrijven
     #TODO: cas_matrix support maken
     #TODO: ML code schrijven
     #fuck_mijn_pc fixt minimum ten koste van uw CPU
     #fuck_CPU fixt betrouwbaarheidsinterval ten koste van uw CPU
+    #initial_range geeft een gebied waarin de initial values gezocht worden
     print("Raw output")
-    mini = minimize_chi2(model, initial_vals, x_val, y_val, y_err, soort_fout)
+    mini = minimize_chi2(model, initial_vals, x_val, y_val, y_err, bounds = initial_range, soort_fout=soort_fout)
     chi_min = mini["fun"]
     min_param = mini["x"]
     print(mini)
@@ -375,9 +376,9 @@ def plot_chi2(plotwaarde, min_param, x_val, y_val, y_err, soort_fout, model, n_p
     lijst = [bot, inval, top, min_param[indx]]
     dif = max(lijst) - min(lijst)
 
-    rangge = np.linspace(min(lijst) -dif*0.05, max(lijst)+dif*0.05,10000)
+    rangge = np.linspace(min(lijst) -dif*1.5, max(lijst)+dif*1.5,10000)
 
-    fig, ax = plt.subplots(1,1)
+    fig, ax = plt.subplots(1,1, figsize = (30,10))
     y_as = []
     for i in rangge:
         parami = min_param.copy()

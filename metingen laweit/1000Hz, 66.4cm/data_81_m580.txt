@@ -1,5 +1,5 @@
 Channel              :		CH1
-Frequency            :		  ?
+Frequency            :		  1.062kHz
 Period               :		  ?
 PK-PK                :		23.44mV
 Probe attenuation    :		1X
