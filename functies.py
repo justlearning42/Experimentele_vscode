@@ -294,7 +294,7 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
             y_as = []
             top = 3* betrouwb_int[i][1] - 2* min_param[i] #zoek op 3 sigma's van het centrum
             bot = -2*abs(min_param[i]) +3* betrouwb_int[i][0] #Zoek op 3 sigma's van het centrum
-            inval = initial_vals[i]
+            inval = initial_vals(x_val, y_val)[i]
             lijst = [top, bot, inval]
             rangge = np.linspace(min[lijst], max[lijst],10000)
             #zoek nu het np.min op een linspace op deze reeks
