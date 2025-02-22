@@ -264,9 +264,12 @@ def chi2_in_1_var(var, ind_var, x_val, y_val, y_err, param_values, chi_min, mode
 
 def find_sigma_values(x_val, y_val, y_err, param_values, te_checken_param_ind, chi_min, soort_fout, model):
     functie = lambda *args: chi2_in_1_var(*args)
-    gok = param_values[te_checken_param_ind]
-    oplossing_max = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok + abs(gok)/2)
-    oplossing_min = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok - abs(gok)/2)
+    gok = param_values[te_checken_param_ind] #zoek de randen gecenterd rond het minimum
+    hoogte = chi2.ppf(0.68, df=len(param_values)) #neem aan dat de rico niet oneindig is of zo
+    ricogok = 100
+    print("hoogte:",hoogte)
+    oplossing_max = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok + gok/2)
+    oplossing_min = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok - gok/2)
     return [oplossing_min[0], oplossing_max[0]]
     
 def uncertainty_intervals(min_values, x_val, y_val, y_err,  chi_min, model, soort_fout = "Stat"):
@@ -361,11 +364,13 @@ def plot_chi2(plotwaarde, min_param, x_val, y_val, y_err, soort_fout, model, n_p
         parami[indx] = i
         y_as.append(chi2_bereken(parami, x_val, y_val, y_err, soort_fout, model))
     y_as = np.array(y_as)
+    pluseensigma = chi_min + chi2.ppf(0.68, df=n_param)
+    #print('hoogte in plot:', pluseensigma)
     ax.plot(rangge, y_as, label = "$\\chi^2$ in functie van param")
     ax.errorbar([min_param[indx]], [chi_min], fmt = "o", label = "Optimale punt", color = "k")
     ax.errorbar([bot, top], [chi_min + chi2.ppf(0.68, df = n_param), chi_min + chi2.ppf(0.68, df = n_param)], fmt = "o", label = "Betrouwbint", color = "r")
     ax.errorbar([inval], [chi_initial], fmt = "o", label = "Initiële waarde met andere min_param", color = "g")
-    ax.plot(rangge, np.full(len(rangge), chi_min + chi2.ppf(0.68, df=n_param)), label = "Minimale $\\chi^2$ plus 1$\\sigma$")
+    ax.plot(rangge, np.full(len(rangge), pluseensigma), label = "Minimale $\\chi^2$ plus 1$\\sigma$")
     ax.set_xlabel('Parameter op index'+str(indx))
     ax.set_ylabel('$\\chi^2$')
     ax.legend()
