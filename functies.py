@@ -298,18 +298,20 @@ def uncertainty_intervals(min_values, x_val, y_val, y_err,  chi_min, model, soor
     return intervallen
 
 def fit(parameters, model, initial_vals, x_val, y_val, y_err, initial_range = None, soort_fout = "Stat", 
-        x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", detailed_logs = False, fuck_mijn_pc = False, fuck_CPU = False): #Veel van deze inputs doen niets, kmoet nog pretty
+        x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", detailed_logs = False, fuck_mijn_pc = False, fuck_CPU = False, return_fit_stats = False): #Veel van deze inputs doen niets, kmoet nog pretty
     #print code schrijven
     #TODO: cas_matrix support maken
     #TODO: ML code schrijven
     #fuck_mijn_pc fixt minimum ten koste van uw CPU
     #fuck_CPU fixt betrouwbaarheidsinterval ten koste van uw CPU
     #initial_range geeft een gebied waarin de initial values gezocht worden
-    print("Raw output")
+    if detailed_logs:
+        print("Raw output")
     mini = minimize_chi2(model, initial_vals, x_val, y_val, y_err, bounds = initial_range, soort_fout=soort_fout)
     chi_min = mini["fun"]
     min_param = mini["x"]
-    print(mini)
+    if detailed_logs:
+        print(mini)
     
     betrouwb_int = uncertainty_intervals(min_param, x_val, y_val, y_err, chi_min, model, soort_fout, fuck_CPU = fuck_CPU)
     if fuck_mijn_pc:
@@ -367,6 +369,8 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, initial_range = No
     outp = []
     for i in range(0, len(parameters)):
         outp.append([min_param[i], fouten[i], 'S'])
+    if return_fit_stats:
+        outp.append([chi_red, p_waarde])
     return outp
 
 
