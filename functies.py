@@ -597,7 +597,7 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
     @param:
      - parameters: De parameters van het model, in een vector gegeven
      - model: Het model dat gefit wordt. Dit dient een functie model(x, param) te zijn die in x een vector datapunten kan accepteren
-     - initial_vals: Initiële waardes voor de fitparameters
+     - initial_vals: Initiële waardes voor de fitparameters (Dit dient een functie te zijn die x_val en y_val neemt en initiële waarden voor de parameters geeft, in dezelfde volgorde als "parameters")
      - x_val: Een vector met x_waardes
      - y_val: Een vector met y_waardes van dezelfde grootte als x_val
      - x_variance: De varianties van de x_waardes, in dezelfde volgorde en van dezelfde lengte als x_val
