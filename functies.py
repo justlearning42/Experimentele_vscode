@@ -262,7 +262,7 @@ def chi2_in_1_var(var, ind_var, x_val, y_val, y_err, param_values, chi_min, mode
         outp = np.append(outp, chi2_bereken(kopie, x_val, y_val, y_err, soort_fout, model) - chi2.ppf(0.68, df=aant_param) - chi_min)
     return outp
 
-def fuck_de_CPU_fsolve(functie, args, x0, step = 1.49012e-08):
+def fuck_de_CPU_fsolve(functie, args, x0, step = 1.49012e-04):
     #om links te zoeken: maak step negatief
     gevonden = False
     stepcount = 0
@@ -281,10 +281,10 @@ def fuck_de_CPU_fsolve(functie, args, x0, step = 1.49012e-08):
 def find_sigma_values(x_val, y_val, y_err, param_values, te_checken_param_ind, chi_min, soort_fout, model, fuck_CPU = False):
     functie = lambda *args: chi2_in_1_var(*args)
     gok = param_values[te_checken_param_ind] #zoek de randen gecenterd rond het minimum
-    print('functie(chimin)', functie([gok],te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout))
     if fuck_CPU:
         oplossing_max = fuck_de_CPU_fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok)
-        oplossing_min = fuck_de_CPU_fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok, step = -1.49012e-08)
+        oplossing_min = fuck_de_CPU_fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), 
+                                           x0 = gok, step = -1.49012e-04)
     else:
         oplossing_max = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok + gok/2, maxfev = 1000)
         oplossing_min = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok- gok/2, maxfev = 1000)
