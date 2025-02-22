@@ -262,35 +262,55 @@ def chi2_in_1_var(var, ind_var, x_val, y_val, y_err, param_values, chi_min, mode
         outp = np.append(outp, chi2_bereken(kopie, x_val, y_val, y_err, soort_fout, model) - chi2.ppf(0.68, df=aant_param) - chi_min)
     return outp
 
-def find_sigma_values(x_val, y_val, y_err, param_values, te_checken_param_ind, chi_min, soort_fout, model):
+def fuck_de_CPU_fsolve(functie, args, x0, step = 1.49012e-08):
+    #om links te zoeken: maak step negatief
+    gevonden = False
+    stepcount = 0
+    while not gevonden:
+        NU = functie([x0+stepcount*step], *args)[0]
+        DAN = functie([x0+(stepcount+1)*step], *args)[0]
+        if DAN == 0: #als het nulpunt is gevonden
+            gevonden = True
+            return [x0+(stepcount+1)*step]
+        elif abs(NU*DAN)/(NU*DAN) < 0: #een tekenswitch, dus het nulpunt is ertussen
+            gevonden = True
+            return [x0+(stepcount+1)*step]
+        else:
+            stepcount += 1
+
+def find_sigma_values(x_val, y_val, y_err, param_values, te_checken_param_ind, chi_min, soort_fout, model, fuck_CPU = False):
     functie = lambda *args: chi2_in_1_var(*args)
     gok = param_values[te_checken_param_ind] #zoek de randen gecenterd rond het minimum
-    hoogte = chi2.ppf(0.68, df=len(param_values)) #neem aan dat de rico niet oneindig is of zo
-    ricogok = 100
-    print("hoogte:",hoogte)
-    oplossing_max = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok + gok/2)
-    oplossing_min = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok - gok/2)
+    print('functie(chimin)', functie([gok],te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout))
+    if fuck_CPU:
+        oplossing_max = fuck_de_CPU_fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok)
+        oplossing_min = fuck_de_CPU_fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok, step = -1.49012e-08)
+    else:
+        oplossing_max = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok + gok/2, maxfev = 1000)
+        oplossing_min = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok- gok/2, maxfev = 1000)
     return [oplossing_min[0], oplossing_max[0]]
     
-def uncertainty_intervals(min_values, x_val, y_val, y_err,  chi_min, model, soort_fout = "Stat"):
+def uncertainty_intervals(min_values, x_val, y_val, y_err,  chi_min, model, soort_fout = "Stat", fuck_CPU = False):
     aant_param = len(min_values)
     intervallen = []
     for i in range(0, aant_param):
-        intervallen.append(find_sigma_values(x_val, y_val, y_err, min_values, i, chi_min, soort_fout, model))
+        intervallen.append(find_sigma_values(x_val, y_val, y_err, min_values, i, chi_min, soort_fout, model, fuck_CPU=fuck_CPU))
     return intervallen
 
 def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat", 
-        x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", detailed_logs = False, fuck_mijn_pc = False): #Veel van deze inputs doen niets, kmoet nog pretty
+        x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", detailed_logs = False, fuck_mijn_pc = False, fuck_CPU = False): #Veel van deze inputs doen niets, kmoet nog pretty
     #print code schrijven
     #TODO: cas_matrix support maken
     #TODO: ML code schrijven
+    #fuck_mijn_pc fixt minimum ten koste van uw CPU
+    #fuck_CPU fixt betrouwbaarheidsinterval ten koste van uw CPU
     print("Raw output")
     mini = minimize_chi2(model, initial_vals, x_val, y_val, y_err, soort_fout)
     chi_min = mini["fun"]
     min_param = mini["x"]
     print(mini)
     
-    betrouwb_int = uncertainty_intervals(min_param, x_val, y_val, y_err, chi_min, model, soort_fout)
+    betrouwb_int = uncertainty_intervals(min_param, x_val, y_val, y_err, chi_min, model, soort_fout, fuck_CPU = fuck_CPU)
     if fuck_mijn_pc:
         for i in range(len(min_param)):
             huidig_minimum = chi2_bereken(min_param, x_val, y_val, y_err, soort_fout, model)
