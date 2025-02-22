@@ -290,6 +290,7 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
     betrouwb_int = uncertainty_intervals(min_param, x_val, y_val, y_err, chi_min, model, soort_fout)
     if fuck_mijn_pc:
         for i in range(len(min_param)):
+            huidig_minimum = chi2_bereken(min_param, x_val, y_val, y_err, soort_fout, model)
             y_as = []
             top = 3* betrouwb_int[i][1] - 2* min_param[i] #zoek op 3 sigma's van het centrum
             bot = -2*abs(min_param[i]) +3* betrouwb_int[i][0] #Zoek op 3 sigma's van het centrum
@@ -300,11 +301,11 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
             #zoek nu het np.min op een linspace op deze reeks
             for ind in rangge:
                 parami = min_param.copy()
-                parami[ind] = float(ind)
+                parami[i] = ind
                 y_as.append(chi2_bereken(parami, x_val, y_val, y_err, soort_fout, model))
             minimumarg = np.argmin(y_as)
             minimum = np.min(y_as)
-            if minimum < chi_min[i]:
+            if minimum < huidig_minimum:
                 print('OVERRULED MINIMUM')
                 min_param[i] = minimumarg
     print(betrouwb_int)
