@@ -14,7 +14,6 @@ from IPython.display import display
 
 ########### Algemene data analyse ############
 def round_to_n(x, n): #rond uw data af op n beduidende cijfers
-    print('test123')
     return round(x, -int(np.floor(np.log10(abs(x))))-1+n) 
 
 def foutpropagatie(expr, parameters):
@@ -295,12 +294,13 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, soort_fout = "Stat
             top = 3* betrouwb_int[i][1] - 2* min_param[i] #zoek op 3 sigma's van het centrum
             bot = -2*abs(min_param[i]) +3* betrouwb_int[i][0] #Zoek op 3 sigma's van het centrum
             inval = initial_vals(x_val, y_val)[i]
-            lijst = [top, bot, inval]
-            rangge = np.linspace(min(lijst), max(lijst),10000)
+            lijst = [top, bot, inval, min_param[i]]
+            dif = max(lijst) - min(lijst)
+            rangge = np.linspace(min(lijst)-0.01*dif, max(lijst)+0.01*dif,10000)
             #zoek nu het np.min op een linspace op deze reeks
             for ind in rangge:
                 parami = min_param.copy()
-                parami[ind] = ind
+                parami[ind] = float(ind)
                 y_as.append(chi2_bereken(parami, x_val, y_val, y_err, soort_fout, model))
             minimumarg = np.argmin(y_as)
             minimum = np.min(y_as)
