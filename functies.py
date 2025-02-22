@@ -10,7 +10,7 @@ from scipy.stats import chi2
 import classes
 from IPython.display import display
 
-
+#nutteloze comment
 
 ########### Algemene data analyse ############
 def round_to_n(x, n): #rond uw data af op n beduidende cijfers
