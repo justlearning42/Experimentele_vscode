@@ -354,9 +354,16 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, initial_range = No
     fouten = []
     for fout in foutjes:
         if abs(fout[0]/fout[1]) < 1.25 and abs(fout[0]/fout[1]) > 0.8:
-            fouten.append(round_to_n(max(fout[0], fout[1]), 2))
+            try:
+                fouten.append(round_to_n(max(fout[0], fout[1]), 2))
+            except:
+                fouten.append(max(fout[0], fout[1]))
         else:
-            fouten.append((round_to_n(fout[0],2),round_to_n(fout[1],2)))
+            try:
+                fouten.append((round_to_n(fout[0],2),round_to_n(fout[1],2)))
+            except:
+                tuppel = (fout[0],fout[1])
+                fouten.append(tuppel)
     outp = []
     for i in range(0, len(parameters)):
         outp.append([min_param[i], fouten[i], 'S'])
