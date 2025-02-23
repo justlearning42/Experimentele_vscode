@@ -193,7 +193,8 @@ def mu_sigma(waarden: list, naam = None):
         teller = np.sum(vals * g_vals)
         noemer = np.sum(g_vals)
         eind_waarde = teller/noemer
-        eind_fout = 1/np.sqrt(noemer)
+        print('noemer:',noemer)
+        eind_fout = 1/(noemer**0.5)
         outp = classes.datapunt(eind_waarde, eind_fout, naam)
     elif dimensies == 2:
         if naam == None:
