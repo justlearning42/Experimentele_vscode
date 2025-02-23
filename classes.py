@@ -243,6 +243,9 @@ class datapunt:
     def get_variance(self):
         return self.variance
     
+    def set_val(self, value):
+        self.waarde = value
+    
 class meting:
     def __init__(self):
         pass
