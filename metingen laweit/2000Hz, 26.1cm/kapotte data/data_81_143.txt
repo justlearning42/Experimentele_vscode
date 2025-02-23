@@ -1,5 +1,5 @@
 Channel              :		CH1
-Frequency            :		  ?
+Frequency            :		  1.999kHz NOOT: DIT IS HANDMATIG AANGEPAST VOOR DATA ANALYSE
 Period               :		  ?
 PK-PK                :		19.53mV
 Probe attenuation    :		1X
