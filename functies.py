@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from scipy.optimize import minimize, fsolve, root_scalar
 from scipy.stats import chi2
 import classes
+import itertools
 from IPython.display import display
 
 #nutteloze comment
@@ -234,7 +235,27 @@ def chi2_bereken(param, x_val, y_val, y_err, soort_fout, model):
     chi_2_val = np.sum((y_val - model(x_val, param))**2 / fouten)
     return chi_2_val
 
-def minimize_chi2(model, initial_vals, x_val, y_val, y_err, bounds = None, soort_fout = 'Stat'):
+def generate_hyperbalk(bounds, puntenperdimensie):
+    """
+    Generate all points in an n-dimensional hyperbeam given bounds and resolution.
+
+    Parameters:
+    bounds (list of tuples): List of (min, max) tuples for each dimension.
+    resolution (int): Number of points per dimension.
+
+    Returns:
+    list of tuples: List of all points in the n-dimensional space.
+    """
+    # Generate linearly spaced points for each dimension
+    grids = [np.linspace(grens[0], grens[1], puntenperdimensie) for grens in bounds]
+
+    # Create the Cartesian product of all dimension grids
+    points = list(itertools.product(*grids))
+
+    return points
+
+
+def minimize_chi2(model, initial_vals, x_val, y_val, y_err, bounds = None, soort_fout = 'Stat', method = "Nelder-Mead"):
     """Minimaliseert de chi^2 waarde voor een gegeven model en een aantal datapunten
     
     Args:
@@ -249,7 +270,15 @@ def minimize_chi2(model, initial_vals, x_val, y_val, y_err, bounds = None, soort
     """
     chi2_func = lambda *args: chi2_bereken(*args)
     gok = initial_vals(x_val, y_val)
-    mini = minimize(chi2_func, gok, bounds = bounds, args = (x_val, y_val, y_err, soort_fout, model), method="Nelder-Mead")
+    if method == 'fuck you' and not bounds is None:
+        hyperbalk = generate_hyperbalk(bounds, 100)
+        minimum = chi2_bereken(hyperbalk[0], x_val, y_val, y_err, soort_fout, model)
+        mini = dict()
+        for punt in hyperbalk:
+            if chi2_bereken(punt, x_val, y_val, y_err, soort_fout, model) <= minimum:
+                mini["x"] = punt
+                mini["fun"] = minimum
+    mini = minimize(chi2_func, gok, bounds = bounds, args = (x_val, y_val, y_err, soort_fout, model), method=method)
 
     return mini
 
@@ -298,7 +327,8 @@ def uncertainty_intervals(min_values, x_val, y_val, y_err,  chi_min, model, soor
     return intervallen
 
 def fit(parameters, model, initial_vals, x_val, y_val, y_err, initial_range = None, soort_fout = "Stat", 
-        x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", detailed_logs = False, fuck_mijn_pc = False, fuck_CPU = False, return_fit_stats = False): #Veel van deze inputs doen niets, kmoet nog pretty
+        x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", detailed_logs = False, fuck_mijn_pc = False, fuck_CPU = False, 
+        minimizemethod = 'Nelder-Mead', return_fit_stats = False): #Veel van deze inputs doen niets, kmoet nog pretty
     #print code schrijven
     #TODO: cas_matrix support maken
     #TODO: ML code schrijven
@@ -307,7 +337,7 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, initial_range = No
     #initial_range geeft een gebied waarin de initial values gezocht worden
     if detailed_logs:
         print("Raw output")
-    mini = minimize_chi2(model, initial_vals, x_val, y_val, y_err, bounds = initial_range, soort_fout=soort_fout)
+    mini = minimize_chi2(model, initial_vals, x_val, y_val, y_err, bounds = initial_range, soort_fout=soort_fout, method = minimizemethod)
     chi_min = mini["fun"]
     min_param = mini["x"]
     if detailed_logs:
