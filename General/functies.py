@@ -7,7 +7,7 @@ import sympy.stats as stats
 from matplotlib import pyplot as plt
 from scipy.optimize import minimize, fsolve, root_scalar
 from scipy.stats import chi2
-import General.classes
+import General.classes as classes
 import itertools
 from IPython.display import display
 
@@ -326,18 +326,19 @@ def uncertainty_intervals(min_values, x_val, y_val, y_err,  chi_min, model, soor
         intervallen.append(find_sigma_values(x_val, y_val, y_err, min_values, i, chi_min, soort_fout, model, fuck_CPU=fuck_CPU))
     return intervallen
 
-def fit(parameters, model, initial_vals, x_val, y_val, y_err, initial_range = None, soort_fout = "Stat", 
+def fit(parameters, model, initial_vals, x_val, y_val, y_err, bounds = None, soort_fout = "Stat", 
         x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", detailed_logs = False, fuck_mijn_pc = False, fuck_CPU = False, 
         minimizemethod = 'Nelder-Mead', return_fit_stats = False): #Veel van deze inputs doen niets, kmoet nog pretty
-    #print code schrijven
+    """
+    print code schrijven
     #TODO: cas_matrix support maken
     #TODO: ML code schrijven
-    #fuck_mijn_pc fixt minimum ten koste van uw CPU
-    #fuck_CPU fixt betrouwbaarheidsinterval ten koste van uw CPU
-    #initial_range geeft een gebied waarin de initial values gezocht worden
+    fuck_mijn_pc fixt minimum ten koste van uw CPU
+    fuck_CPU fixt betrouwbaarheidsinterval ten koste van uw CPU
+    bounds geeft een gebied waarin de fitvalues gezocht worden"""
     if detailed_logs:
         print("Raw output")
-    mini = minimize_chi2(model, initial_vals, x_val, y_val, y_err, bounds = initial_range, soort_fout=soort_fout, method = minimizemethod)
+    mini = minimize_chi2(model, initial_vals, x_val, y_val, y_err, bounds = bounds, soort_fout=soort_fout, method = minimizemethod)
     chi_min = mini["fun"]
     min_param = mini["x"]
     if detailed_logs:
@@ -493,7 +494,7 @@ def initial_vals_2D(x_val, y_val, initial_vals):
     print(outp)
     return outp
 
-def minimize_chi2_2D(model, initial_vals, x_val, y_val, y_variance, x_variance, n_param):
+def minimize_chi2_2D(model, initial_vals, x_val, y_val, y_variance, x_variance, n_param, bounds = None):
     """Minimaliseert de chi^2 waarde voor een gegeven model en een aantal datapunten
     
     Args:
@@ -508,7 +509,11 @@ def minimize_chi2_2D(model, initial_vals, x_val, y_val, y_variance, x_variance, 
     """
     chi2_func = lambda *args: chi2_bereken_2D(*args)
     gok = initial_vals_2D(x_val, y_val, initial_vals)
-    mini = minimize(chi2_func, gok, args = (x_val, y_val,x_variance, y_variance, model, n_param))
+    if not bounds is None:
+        nada = [(None, None) for x in range(len(x_val))]
+        bounds = list(bounds)
+        bounds += nada
+    mini = minimize(chi2_func, gok, args = (x_val, y_val,x_variance, y_variance, model, n_param), bounds = bounds)
     return mini
 
 def chi2_in_1_var_2D(var, ind_var, x_val, y_val, x_variance, y_variance, hybrid, chi_min, model, n_param):
@@ -632,7 +637,7 @@ def plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel
 
 def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance, grootteorde = 1,
         x_as_titel = "X-as", y_as_titel = "Y-as", titel = "Fit", figure_name = None, size = None,
-        error_method = "Old", savefig = False, detailed_logs = False, fontsize = 18, titlesize = 20, axsize = 16): 
+        error_method = "Old", savefig = False, detailed_logs = False, fontsize = 18, titlesize = 20, axsize = 16, bounds = None): 
     """
     OUTDATED CODE, GEBRUIK NIEUWERE FUNCTIES INDIEN DEZE AL GEÏMPLEMENTEERD ZIJN
     #################################
@@ -666,7 +671,7 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
     #TODO: cas_matrix support maken
     #TODO: ML code schrijven
     n_param = len(parameters)
-    mini = minimize_chi2_2D(model, initial_vals, x_val, y_val, y_variance, x_variance, n_param)
+    mini = minimize_chi2_2D(model, initial_vals, x_val, y_val, y_variance, x_variance, n_param, bounds = bounds)
     chi_min = mini["fun"]
     min_hybrid = mini["x"]
     min_param = min_hybrid[:n_param]

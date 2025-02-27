@@ -1,5 +1,5 @@
 import classes
-import functies
+import General.functies as functies
 import sympy as sp
 from IPython.display import display
 

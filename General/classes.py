@@ -5,7 +5,7 @@ import sympy.stats as stats
 from matplotlib import pyplot as plt
 from scipy.optimize import minimize, fsolve
 from scipy.stats import chi2
-import General.functies
+import General.functies as functies
 import numbers
 from IPython.display import display
 
