@@ -212,7 +212,7 @@ def mu_sigma(waarden: list, naam = None):
         
     
 ########### Fit code - 1D ############
-def chi2_bereken(param, x_val, y_val, y_err, soort_fout, model):
+def chi2_bereken(param, x_val, y_val, y_err, soort_fout, model, aditional_params = None):
     """Geeft chi^2 waarde in functie van de parameters
     
     Args: 
@@ -232,7 +232,10 @@ def chi2_bereken(param, x_val, y_val, y_err, soort_fout, model):
         if type(y_err) == list:
             y_err = np.array(y_err)
         fouten = y_err**2
-    chi_2_val = np.sum((y_val - model(x_val, param))**2 / fouten)
+    if aditional_params is None:
+        chi_2_val = np.sum((y_val - model(x_val, param))**2 / fouten)
+    else:
+        chi_2_val = np.sum((y_val - model(x_val, param, aditional_params))**2 / fouten)
     return chi_2_val
 
 def generate_hyperbalk(bounds, puntenperdimensie):
@@ -255,7 +258,7 @@ def generate_hyperbalk(bounds, puntenperdimensie):
     return points
 
 
-def minimize_chi2(model, initial_vals, x_val, y_val, y_err, bounds = None, soort_fout = 'Stat', method = "Nelder-Mead"):
+def minimize_chi2(model, initial_vals, x_val, y_val, y_err, bounds = None, soort_fout = 'Stat', method = "Nelder-Mead", aditional_params = None):
     """Minimaliseert de chi^2 waarde voor een gegeven model en een aantal datapunten
     
     Args:
@@ -272,23 +275,23 @@ def minimize_chi2(model, initial_vals, x_val, y_val, y_err, bounds = None, soort
     gok = initial_vals(x_val, y_val)
     if method == 'fuck you' and not bounds is None:
         hyperbalk = generate_hyperbalk(bounds, 100)
-        minimum = chi2_bereken(hyperbalk[0], x_val, y_val, y_err, soort_fout, model)
+        minimum = chi2_bereken(hyperbalk[0], x_val, y_val, y_err, soort_fout, model, aditional_params=aditional_params)
         mini = dict()
         for punt in hyperbalk:
-            if chi2_bereken(punt, x_val, y_val, y_err, soort_fout, model) <= minimum:
+            if chi2_bereken(punt, x_val, y_val, y_err, soort_fout, model, aditional_params=aditional_params) <= minimum:
                 mini["x"] = punt
                 mini["fun"] = minimum
-    mini = minimize(chi2_func, gok, bounds = bounds, args = (x_val, y_val, y_err, soort_fout, model), method=method)
+    mini = minimize(chi2_func, gok, bounds = bounds, args = (x_val, y_val, y_err, soort_fout, model, aditional_params), method=method)
 
     return mini
 
-def chi2_in_1_var(var, ind_var, x_val, y_val, y_err, param_values, chi_min, model, soort_fout = "Stat"):
+def chi2_in_1_var(var, ind_var, x_val, y_val, y_err, param_values, chi_min, model, soort_fout = "Stat", aditional_params = None):
     outp = np.array([])
     aant_param = len(param_values)
     for val in var:
         kopie = param_values.copy()
         np.put(kopie, ind_var, val)
-        outp = np.append(outp, chi2_bereken(kopie, x_val, y_val, y_err, soort_fout, model) - chi2.ppf(0.68, df=aant_param) - chi_min)
+        outp = np.append(outp, chi2_bereken(kopie, x_val, y_val, y_err, soort_fout, model, aditional_params=aditional_params) - chi2.ppf(0.68, df=aant_param) - chi_min)
     return outp
 
 def fuck_de_CPU_fsolve(functie, args, x0, step = 1.49012e-04):
@@ -307,28 +310,28 @@ def fuck_de_CPU_fsolve(functie, args, x0, step = 1.49012e-04):
         else:
             stepcount += 1
 
-def find_sigma_values(x_val, y_val, y_err, param_values, te_checken_param_ind, chi_min, soort_fout, model, fuck_CPU = False):
+def find_sigma_values(x_val, y_val, y_err, param_values, te_checken_param_ind, chi_min, soort_fout, model, fuck_CPU = False, aditional_params=None):
     functie = lambda *args: chi2_in_1_var(*args)
     gok = param_values[te_checken_param_ind] #zoek de randen gecenterd rond het minimum
     if fuck_CPU:
-        oplossing_max = fuck_de_CPU_fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok)
-        oplossing_min = fuck_de_CPU_fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), 
+        oplossing_max = fuck_de_CPU_fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout, aditional_params), x0 = gok)
+        oplossing_min = fuck_de_CPU_fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout, aditional_params), 
                                            x0 = gok, step = -1.49012e-04)
     else:
-        oplossing_max = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok + gok/2, maxfev = 1000)
-        oplossing_min = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout), x0 = gok- gok/2, maxfev = 1000)
+        oplossing_max = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout, aditional_params), x0 = gok + gok/2, maxfev = 1000)
+        oplossing_min = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout, aditional_params), x0 = gok- gok/2, maxfev = 1000)
     return [oplossing_min[0], oplossing_max[0]]
     
-def uncertainty_intervals(min_values, x_val, y_val, y_err,  chi_min, model, soort_fout = "Stat", fuck_CPU = False):
+def uncertainty_intervals(min_values, x_val, y_val, y_err,  chi_min, model, soort_fout = "Stat", fuck_CPU = False, aditional_params = None):
     aant_param = len(min_values)
     intervallen = []
     for i in range(0, aant_param):
-        intervallen.append(find_sigma_values(x_val, y_val, y_err, min_values, i, chi_min, soort_fout, model, fuck_CPU=fuck_CPU))
+        intervallen.append(find_sigma_values(x_val, y_val, y_err, min_values, i, chi_min, soort_fout, model, fuck_CPU=fuck_CPU, aditional_params=aditional_params))
     return intervallen
 
 def fit(parameters, model, initial_vals, x_val, y_val, y_err, bounds = None, soort_fout = "Stat", 
         x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", detailed_logs = False, fuck_mijn_pc = False, fuck_CPU = False, 
-        minimizemethod = 'Nelder-Mead', return_fit_stats = False): #Veel van deze inputs doen niets, kmoet nog pretty
+        minimizemethod = 'Nelder-Mead', return_fit_stats = False, aditional_params = None): #Veel van deze inputs doen niets, kmoet nog pretty
     """
     print code schrijven
     #TODO: cas_matrix support maken
@@ -338,16 +341,16 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, bounds = None, soo
     bounds geeft een gebied waarin de fitvalues gezocht worden"""
     if detailed_logs:
         print("Raw output")
-    mini = minimize_chi2(model, initial_vals, x_val, y_val, y_err, bounds = bounds, soort_fout=soort_fout, method = minimizemethod)
+    mini = minimize_chi2(model, initial_vals, x_val, y_val, y_err, bounds = bounds, soort_fout=soort_fout, method = minimizemethod, aditional_params=aditional_params)
     chi_min = mini["fun"]
     min_param = mini["x"]
     if detailed_logs:
         print(mini)
     
-    betrouwb_int = uncertainty_intervals(min_param, x_val, y_val, y_err, chi_min, model, soort_fout, fuck_CPU = fuck_CPU)
+    betrouwb_int = uncertainty_intervals(min_param, x_val, y_val, y_err, chi_min, model, soort_fout, fuck_CPU = fuck_CPU, aditional_params=aditional_params)
     if fuck_mijn_pc:
         for i in range(len(min_param)):
-            huidig_minimum = chi2_bereken(min_param, x_val, y_val, y_err, soort_fout, model)
+            huidig_minimum = chi2_bereken(min_param, x_val, y_val, y_err, soort_fout, model, aditional_params=aditional_params)
             y_as = []
             top = 3* betrouwb_int[i][1] - 2* min_param[i] #zoek op 3 sigma's van het centrum
             bot = -2*abs(min_param[i]) +3* betrouwb_int[i][0] #Zoek op 3 sigma's van het centrum
@@ -359,7 +362,7 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, bounds = None, soo
             for ind in rangge:
                 parami = min_param.copy()
                 parami[i] = ind
-                y_as.append(chi2_bereken(parami, x_val, y_val, y_err, soort_fout, model))
+                y_as.append(chi2_bereken(parami, x_val, y_val, y_err, soort_fout, model, aditional_params=aditional_params))
             minimumarg = np.argmin(y_as)
             minimum = np.min(y_as)
             if minimum < huidig_minimum:
@@ -380,7 +383,7 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, bounds = None, soo
     initiele_waarde = initial_vals(x_val, y_val)
     if detailed_logs:
         for i in range(len(min_param)):
-            plot_chi2((betrouwb_int[i], i), min_param, x_val, y_val, y_err, soort_fout, model, len(parameters), chi_min, initiele_waarde[i])
+            plot_chi2((betrouwb_int[i], i), min_param, x_val, y_val, y_err, soort_fout, model, len(parameters), chi_min, initiele_waarde[i], aditional_params=aditional_params)
     
     print("De p-waarde voor de hypothese test dat het model zinvol is, wordt gegeven door: %.5g"%p_waarde)
     print("De gereduceerde chi^2 waarde is: %.5g"%chi_red)
@@ -405,7 +408,7 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, bounds = None, soo
     return outp
 
 
-def plot_chi2(plotwaarde, min_param, x_val, y_val, y_err, soort_fout, model, n_param, chi_min, inval):
+def plot_chi2(plotwaarde, min_param, x_val, y_val, y_err, soort_fout, model, n_param, chi_min, inval, aditional_params=None):
     """
     plotwaarde = (range, indx)
     range is de linspace waarover geplot wordt bij de parameter met index indx
@@ -414,7 +417,7 @@ def plot_chi2(plotwaarde, min_param, x_val, y_val, y_err, soort_fout, model, n_p
     dif = top - bot
     param_initial = min_param.copy()
     param_initial[indx] = inval
-    chi_initial = chi2_bereken(param_initial, x_val, y_val, y_err, soort_fout, model)
+    chi_initial = chi2_bereken(param_initial, x_val, y_val, y_err, soort_fout, model, aditional_params=aditional_params)
     lijst = [bot, inval, top, min_param[indx]]
     dif = max(lijst) - min(lijst)
 
@@ -425,7 +428,7 @@ def plot_chi2(plotwaarde, min_param, x_val, y_val, y_err, soort_fout, model, n_p
     for i in rangge:
         parami = min_param.copy()
         parami[indx] = i
-        y_as.append(chi2_bereken(parami, x_val, y_val, y_err, soort_fout, model))
+        y_as.append(chi2_bereken(parami, x_val, y_val, y_err, soort_fout, model, aditional_params=aditional_params))
     y_as = np.array(y_as)
     pluseensigma = chi_min + chi2.ppf(0.68, df=n_param)
     #print('hoogte in plot:', pluseensigma)
