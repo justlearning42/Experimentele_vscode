@@ -612,7 +612,8 @@ def jackknife_parameterschattingen(model, initial_vals, n_param, x_val, y_val, x
     jackknife_standard_error = np.sqrt(jackknife_variance/num_points)
     return (jackknife_estimation, jackknife_standard_error)
 
-def plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, parameter_vals, chi_2, p, save_name = None, size = None, savefig = False,fontsize = 5, titlesize = None, axsize = None):
+def plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, parameter_vals, chi_2, p, 
+             save_name = None, size = None, savefig = False,fontsize = 5, titlesize = None, axsize = None, xlim = None, ylim = None):
     if size is None:
         fig, ax = plt.subplots(1,1, figsize = (10,10))
     else:
@@ -629,6 +630,10 @@ def plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel
     ax.set_ylabel(y_as_titel, fontsize = axsize)
     if titlesize is None:
         titlesize = fontsize
+    if not xlim is None:
+        ax.set_xlim(xlim)
+    if not ylim is None:
+        ax.set_ylim(ylim)
     ax.set_title(titel,fontsize = titlesize)
     ax.legend(fontsize = fontsize)
     if save_name is not None:
@@ -640,7 +645,8 @@ def plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel
 
 def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance, grootteorde = 1,
         x_as_titel = "X-as", y_as_titel = "Y-as", titel = "Fit", figure_name = None, size = None,
-        error_method = "Old", savefig = False, detailed_logs = False, fontsize = 18, titlesize = 20, axsize = 16, bounds = None): 
+        error_method = "Old", savefig = False, detailed_logs = False, xlim = None, ylim = None,
+        fontsize = 18, titlesize = 20, axsize = 16, bounds = None): 
     """
     OUTDATED CODE, GEBRUIK NIEUWERE FUNCTIES INDIEN DEZE AL GEÏMPLEMENTEERD ZIJN
     #################################
@@ -723,9 +729,9 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
         for i in range(0, len(parameters)):
             outp.append([min_param[i], fouten[i], 'S'])
         if not fontsize is None:
-            plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, min_param, chi_red, p_waarde, figure_name, size,savefig=savefig, fontsize = fontsize, titlesize=titlesize,axsize=axsize)
+            plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, min_param, chi_red, p_waarde, figure_name, size,savefig=savefig, xlim = xlim, ylim = ylim, fontsize = fontsize, titlesize=titlesize,axsize=axsize)
         else:
-            plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, min_param, chi_red, p_waarde, figure_name, size, savefig=savefig ,titlesize=titlesize,axsize=axsize)
+            plot_fit(x_val, y_val, x_variance, y_variance, x_as_titel, y_as_titel, titel, model, min_param, chi_red, p_waarde, figure_name, size, savefig=savefig, xlim = xlim, ylim = ylim ,titlesize=titlesize,axsize=axsize)
         return outp
     elif error_method == "Jackknife":
         Jackknife_result = jackknife_parameterschattingen(model, initial_vals, n_param, x_val, y_val, x_variance, y_variance, min_param)
