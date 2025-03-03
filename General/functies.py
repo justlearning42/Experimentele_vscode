@@ -492,7 +492,12 @@ def plot_chi2_2D(plotwaarde, min_param, x_val, y_val, x_variance, y_variance, mo
 
 def initial_vals_2D(x_val, y_val, initial_vals):
     param_initials = initial_vals(x_val, y_val)
-    outp = np.concatenate((param_initials, x_val))
+    if len(param_initials) == 0:
+        outp = x_val
+    elif len(x_val) == 0:
+        outp = param_initials
+    else:
+        outp = np.concatenate((param_initials, x_val))
     print(param_initials)
     print(outp)
     return outp
