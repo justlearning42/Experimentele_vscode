@@ -852,7 +852,15 @@ def test_mu1ismu2(meting1, meting2, n1, n2, p_waarde = 0.05, return_p = False, c
             return True
 
 ######## latex prints #########
-
+def latex_print_datapunt(datapoint: classes.datapunt):
+    """
+    JOW FOEMP HOE MOEILIJK IS HET DIT LATEX PRINT EEN DATAPUNT JA???
+    """
+    naam = str(datapoint.get_naam())
+    waarde = datapoint.get_val()
+    fout = datapoint.get_fout()
+    latex_print_meting([waarde, fout], naam)
+    
 def latex_print_tabel(meetwaarden, namen, tabletype = 'row'):
     """
     namen = lijst [param1naam, param2naam, param3naam, ...], de hoofdingen van de tabel
@@ -933,9 +941,9 @@ def latex_print_meting(meetwaarde, naam = None, printing = True):
     waarde = round(waarde, 1)
     fout = round(fout,1)
     if not TUPPEL:
-        latex_output = f'(%s \\pm %s)\\cdot 10^{{%s}}$'%(waarde, fout,exponent)
+        latex_output = f'(%d \\pm %d)\\cdot 10^{{%s}}$'%(waarde, fout,exponent)
     else:
-        latex_output = f'%s^{{-%s}}_{{+%s}}\\cdot 10^{{%s}}$'%(waarde, foutlinks, foutrechts, exponent)
+        latex_output = f'%d^{{-%d}}_{{+%d}}\\cdot 10^{{%s}}$'%(waarde, foutlinks, foutrechts, exponent)
     if naam is None:
         latex_output = '$' + latex_output
     else:

@@ -181,7 +181,10 @@ class vergelijking:
         return: een (np array van) datapunt objecten verkregen door self.formule te evalueren met foutenpropagatie
         """
         if type(parameter_vals[0]) == datapunt:
-            te_evalueren = self.subs(constant_vals)
+            if not constant_vals is None:
+                te_evalueren = self.subs(constant_vals)
+            else:
+                te_evalueren = self
             outp = functies.data_analyse(te_evalueren, parameter_vals, eval_name)
             return outp
         else:
