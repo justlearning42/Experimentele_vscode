@@ -318,8 +318,8 @@ def find_sigma_values(x_val, y_val, y_err, param_values, te_checken_param_ind, c
         oplossing_min = fuck_de_CPU_fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout, aditional_params), 
                                            x0 = gok, step = -1.49012e-04)
     else:
-        oplossing_max = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout, aditional_params), x0 = gok + gok/2, maxfev = 1000)
-        oplossing_min = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout, aditional_params), x0 = gok- gok/2, maxfev = 1000)
+        oplossing_max = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout, aditional_params), x0 = gok + gok/2, maxfev = 10000)
+        oplossing_min = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout, aditional_params), x0 = gok- gok/2, maxfev = 10000)
     return [oplossing_min[0], oplossing_max[0]]
     
 def uncertainty_intervals(min_values, x_val, y_val, y_err,  chi_min, model, soort_fout = "Stat", fuck_CPU = False, aditional_params = None):
