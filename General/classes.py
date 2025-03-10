@@ -263,6 +263,12 @@ class datapunt:
             else:
                 raise NameError('to take a sum of data points they need to have the same name')
     
+    def __mul__(self, other):
+        if type(other) == numbers.Number or type(other) == float or type(other) == int:
+            return datapunt(self.get_val()*other, self.get_fout()*other, self.get_naam(), self.get_verdeling())
+        else:
+            raise NotImplementedError('multiplication of a datapunt and a non-number object is not implemented')
+    
 class meting:
     def __init__(self):
         pass
