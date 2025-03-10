@@ -248,6 +248,13 @@ class datapunt:
     
     def set_val(self, value):
         self.waarde = value
+
+    def __sub__(self, other):
+        if type(other) == datapunt:
+            if other.get_naam() == self.get_naam():
+                return datapunt(self.get_val() + other.get_val(), np.sqrt(self.get_variance() + other.get_variance()), self.get_naam())
+            else:
+                raise NameError('to take a difference of data points they need to have the same name')
     
 class meting:
     def __init__(self):
