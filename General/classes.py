@@ -249,7 +249,22 @@ class datapunt:
     def set_val(self, value):
         self.waarde = value
 
-    def __sub__(self, other):
+    def set_fout(self, fout): #sssht voor overrulen soms wel nuttig
+        verdeling = self.verdeling
+        if verdeling == "Normaal" or verdeling == "N" or verdeling == 'S':
+            if type(fout) == tuple: #eigenlijk mag dit niet
+                fout = np.sqrt(abs(fout[0])**2+fout[1]**2) #kwadratisch gemiddelde nemen
+            self.pmfout = fout
+            self.variance = fout**2
+        elif verdeling == "Uniform" or verdeling == "U":
+            if type(fout) == tuple:
+                self.pmfout = (fout[0] + fout[1]*self.waarde)/2
+                self.variance = (self.pmfout**2)/3
+            else:
+                self.pmfout = fout
+                self.variance = (fout**2)/3
+
+    def __sub__(self, other): #aftrekken
         if type(other) == datapunt:
             if other.get_naam() == self.get_naam():
                 return datapunt(self.get_val() - other.get_val(), np.sqrt(self.get_variance() + other.get_variance()), self.get_naam())
