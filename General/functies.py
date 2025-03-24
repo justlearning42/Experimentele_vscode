@@ -498,8 +498,6 @@ def initial_vals_2D(x_val, y_val, initial_vals):
         outp = param_initials
     else:
         outp = np.concatenate((param_initials, x_val))
-    print(param_initials)
-    print(outp)
     return outp
 
 def minimize_chi2_2D(model, initial_vals, x_val, y_val, y_variance, x_variance, n_param, bounds = None):
@@ -528,7 +526,7 @@ def chi2_in_1_var_2D(var, ind_var, x_val, y_val, x_variance, y_variance, hybrid,
     try:
         some_object_iterator = iter(var)
         outp = np.array([])
-        display(var)
+        print('var:', var)
         for val in var: #Laat deze functie een vector gebruiken voor var i.p.v. slechts 1 waarde.
             #Deze regel dient om de referentie semantiek van lijsten te omzeilen. Zonder dit wordt de vector param_values globaal aangepast
             kopie = np.copy(hybrid)
@@ -557,7 +555,7 @@ def find_sigma_values_2D(x_val, y_val, x_variance,  y_variance, hybrid, te_check
         #en ondergrenzen van het BI precies de nulpunten zijn.
         #Om de bovengrens te vinden wordt een initiële waarde boven de best fittende waarde genomen, omgekeerd voor de ondergrens.
         try:
-            print(functie)
+            print('functie:',functie)
             sol_left = root_scalar(functie, args = (te_checken_param_ind, x_val, y_val, x_variance, y_variance, hybrid, chi_min, model, n_param), method = "brentq", bracket = [gok*(1-i), gok], x0 = gok, x1 = (1-i)*gok)
             sol_right = root_scalar(functie, args = (te_checken_param_ind, x_val, y_val, x_variance, y_variance, hybrid, chi_min, model, n_param), method = "brentq", bracket = [gok, gok*(1+i)], x0 = gok, x1 = (1+i)*gok)
             if detailed_logs:
@@ -706,11 +704,9 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
         print("---------------------------")
     if error_method == "Old":
         betrouwb_int = uncertainty_intervals_2D(min_hybrid, x_val, y_val, x_variance, y_variance, chi_min, model, n_param, grootteorde, detailed_logs)
-        if detailed_logs:
-            print("Betrouwbaarheids intervallen voor de parameters: ")
-            print(betrouwb_int)
-            print("---------------------------")
+        print("Betrouwbaarheids intervallen voor de parameters: ")
         print(betrouwb_int)
+        print("---------------------------")
         foutjes = []
         for i in range(0, n_param):
             top = betrouwb_int[i][1] - min_param[i]
