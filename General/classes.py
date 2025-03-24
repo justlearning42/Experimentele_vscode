@@ -219,6 +219,9 @@ class datapunt:
             else:
                 self.pmfout = fout
                 self.variance = (fout**2)/3
+        elif verdeling == "Poisson" or verdeling == "P":
+            self.variance = waarde
+            self.pmfout = np.sqrt(waarde)
         else:
             print("Andere verdelingen nog niet geïmplementeerd, fout als wortel van variantie genomen")
             self.variance = fout**2
