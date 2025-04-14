@@ -352,8 +352,16 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, bounds = None, soo
         for i in range(len(min_param)):
             huidig_minimum = chi2_bereken(min_param, x_val, y_val, y_err, soort_fout, model, aditional_params=aditional_params)
             y_as = []
-            top = 3* betrouwb_int[i][1] - 2* min_param[i] #zoek op 3 sigma's van het centrum
-            bot = -2*abs(min_param[i]) +3* betrouwb_int[i][0] #Zoek op 3 sigma's van het centrum
+            if bounds is None:
+                top = 3* betrouwb_int[i][1] - 2* min_param[i] #zoek op 3 sigma's van het centrum
+                bot = -2*abs(min_param[i]) +3* betrouwb_int[i][0] #Zoek op 3 sigma's van het centrum
+            else:
+                print('using given bounds')
+                top = bounds[i][1]
+                bot = bounds[i][0]
+                if top is None or bot is None:
+                    top = 3* betrouwb_int[i][1] - 2* min_param[i] #zoek op 3 sigma's van het centrum
+                    bot = -2*abs(min_param[i]) +3* betrouwb_int[i][0] #Zoek op 3 sigma's van het centrum
             inval = initial_vals(x_val, y_val)[i]
             lijst = [top, bot, inval, min_param[i]]
             dif = max(lijst) - min(lijst)
