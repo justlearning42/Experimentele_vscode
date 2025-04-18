@@ -310,28 +310,30 @@ def fuck_de_CPU_fsolve(functie, args, x0, step = 1.49012e-04):
         else:
             stepcount += 1
 
-def find_sigma_values(x_val, y_val, y_err, param_values, te_checken_param_ind, chi_min, soort_fout, model, fuck_CPU = False, aditional_params=None):
+def find_sigma_values(x_val, y_val, y_err, param_values, te_checken_param_ind, chi_min, soort_fout, model, fuck_CPU = False, aditional_params=None, CPU_stepsize = None):
     functie = lambda *args: chi2_in_1_var(*args)
     gok = param_values[te_checken_param_ind] #zoek de randen gecenterd rond het minimum
     if fuck_CPU:
-        oplossing_max = fuck_de_CPU_fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout, aditional_params), x0 = gok)
+        if CPU_stepsize is None:
+            CPU_stepsize = 1.49012e-04
+        oplossing_max = fuck_de_CPU_fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout, aditional_params), x0 = gok, step=CPU_stepsize)
         oplossing_min = fuck_de_CPU_fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout, aditional_params), 
-                                           x0 = gok, step = -1.49012e-04)
+                                           x0 = gok, step = CPU_stepsize)
     else:
         oplossing_max = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout, aditional_params), x0 = gok + gok/2, maxfev = 10000)
         oplossing_min = fsolve(functie, args = (te_checken_param_ind, x_val, y_val, y_err, param_values, chi_min, model, soort_fout, aditional_params), x0 = gok- gok/2, maxfev = 10000)
     return [oplossing_min[0], oplossing_max[0]]
     
-def uncertainty_intervals(min_values, x_val, y_val, y_err,  chi_min, model, soort_fout = "Stat", fuck_CPU = False, aditional_params = None):
+def uncertainty_intervals(min_values, x_val, y_val, y_err,  chi_min, model, soort_fout = "Stat", fuck_CPU = False, aditional_params = None, CPU_stepsize = None):
     aant_param = len(min_values)
     intervallen = []
     for i in range(0, aant_param):
-        intervallen.append(find_sigma_values(x_val, y_val, y_err, min_values, i, chi_min, soort_fout, model, fuck_CPU=fuck_CPU, aditional_params=aditional_params))
+        intervallen.append(find_sigma_values(x_val, y_val, y_err, min_values, i, chi_min, soort_fout, model, fuck_CPU=fuck_CPU, aditional_params=aditional_params, CPU_stepsize=CPU_stepsize))
     return intervallen
 
 def fit(parameters, model, initial_vals, x_val, y_val, y_err, bounds = None, soort_fout = "Stat", 
         x_as_titels = "Generic", y_as_titels = "Generic", titel = "Generic", detailed_logs = False, fuck_mijn_pc = False, fuck_CPU = False, 
-        minimizemethod = 'Nelder-Mead', return_fit_stats = False, aditional_params = None): #Veel van deze inputs doen niets, kmoet nog pretty
+        minimizemethod = 'Nelder-Mead', return_fit_stats = False, aditional_params = None, CPU_stepsize = None): #Veel van deze inputs doen niets, kmoet nog pretty
     """
     print code schrijven
     #TODO: cas_matrix support maken
@@ -347,7 +349,7 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, bounds = None, soo
     if detailed_logs:
         print(mini)
     
-    betrouwb_int = uncertainty_intervals(min_param, x_val, y_val, y_err, chi_min, model, soort_fout, fuck_CPU = fuck_CPU, aditional_params=aditional_params)
+    betrouwb_int = uncertainty_intervals(min_param, x_val, y_val, y_err, chi_min, model, soort_fout, fuck_CPU = fuck_CPU, aditional_params=aditional_params, CPU_stepsize=CPU_stepsize)
     if fuck_mijn_pc:
         for i in range(len(min_param)):
             huidig_minimum = chi2_bereken(min_param, x_val, y_val, y_err, soort_fout, model, aditional_params=aditional_params)
