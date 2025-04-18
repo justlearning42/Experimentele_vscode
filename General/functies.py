@@ -778,14 +778,22 @@ def fit_2D(parameters, model, initial_vals, x_val, y_val, x_variance, y_variance
 ########## stat ############
 
 def normaaltest(hypothese, gemeten): #gemeten is [mu, sigma] merk op dat sigma de steekproefstand.afwijking is!
+    """
+    @IN: hyptohese en gemeten
+    @OUT: p-waarde
+    """
     Zscore = (hypothese-gemeten[0])/gemeten[1]
     Z = sp.stats.Normal('Z', 0,1)
     if Zscore >0:
-        return 2*sp.stats.P(Z > Zscore)
+        return float(2*sp.stats.P(Z > Zscore))
     else:
-        return 2*sp.stats.P(Z < Zscore)
+        return float(2*sp.stats.P(Z < Zscore))
 
 def Ttest(hypothese, gemeten, vrijheidsgraden):
+    """
+    @IN: hyptohese en gemeten en virjheidsgraden
+    @OUT: p-waarde
+    """
     Zscore = (hypothese-gemeten[0])/gemeten[1]
     Z = sp.stats.StudentT('Z', vrijheidsgraden)
     if Zscore >0:
@@ -794,6 +802,10 @@ def Ttest(hypothese, gemeten, vrijheidsgraden):
         return 2*sp.stats.P(Z < Zscore)    
 
 def test_sigma1issigma2(sigma1,sigma2, n1, n2, p_waarde = 0.05, return_p = False):
+    """
+    @IN: hyptohese en gemeten
+    @OUT: True als ze gelijk zijn; false otherwise
+    """
     sigmamax = max(sigma1, sigma2)
     sigmamin = min(sigma1, sigma2)
     Fvalue = sigmamax**2/sigmamin**2 #altijd >= 1
@@ -809,6 +821,10 @@ def test_sigma1issigma2(sigma1,sigma2, n1, n2, p_waarde = 0.05, return_p = False
             return False
     
 def test_mu1ismu2(meting1, meting2, n1, n2, p_waarde = 0.05, return_p = False, cutoff_normaal = 30):
+    """
+    @IN: duidelijf
+    @OUT: p-waarde if return_p = True; boolean value otherwise
+    """
     mu1, sigma1, _ = meting1
     mu2, sigma2, _ = meting2
     sigma1_is_sigma2 = test_sigma1issigma2(sigma1, sigma2, n1, n2, p_waarde)
