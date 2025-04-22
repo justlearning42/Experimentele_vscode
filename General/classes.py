@@ -291,7 +291,8 @@ class datapunt:
         if type(other) == numbers.Number or type(other) == float or type(other) == int:
             return datapunt(self.get_val()*other, self.get_fout()*other, self.get_naam(), self.get_verdeling())
         elif type(other) == datapunt:
-            return datapunt(self.get_val()*other.get_val(), np.sqrt(self.get_rel_variance() + other.get_rel_variance()), sp.symbols(str(self.get_naam()) + "*" + str(other.get_naam())))
+            return datapunt(self.get_val()*other.get_val(), self.get_val() * other.get_val() * np.sqrt(self.get_rel_variance() + other.get_rel_variance()), 
+                            sp.symbols(str(self.get_naam()) + "*" + str(other.get_naam())))
         else:
             raise NotImplementedError("Foute datatype voor vermenigvuldiging met datapunt object.")
     
