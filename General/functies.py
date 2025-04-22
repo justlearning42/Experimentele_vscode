@@ -209,8 +209,6 @@ def mu_sigma(waarden: list, naam = None):
         outp = [classes.datapunt([eind_waarde[i],eind_fout[i],naam[i]]) for i in range(len(waarden))]
     return outp
 
-        
-    
 ########### Fit code - 1D ############
 def chi2_bereken(param, x_val, y_val, y_err, soort_fout, model, aditional_params = None):
     """Geeft chi^2 waarde in functie van de parameters
