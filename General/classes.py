@@ -225,6 +225,8 @@ class datapunt:
         else:
             print("Andere verdelingen nog niet geïmplementeerd, fout als wortel van variantie genomen")
             self.variance = fout**2
+        self.rel_var = self.variance/(self.waarde**2)
+        self.rel_pmfout = self.pmfout/self.waarde
     
     def __str__(self):
         '''
@@ -243,12 +245,16 @@ class datapunt:
         return self.pmfout
     def get_latex(self):
         return functies.latex_print_meting(functies.datapunt_to_vector(datapunt))
-
     def get_verdeling(self):
         return self.verdeling
     def get_variance(self):
         return self.variance
+    def get_rel_variance(self):
+        return self.rel_var
+    def get_rel_fout(self):
+        return self.rel_pmfout
     
+
     def set_val(self, value):
         self.waarde = value
 
@@ -284,8 +290,19 @@ class datapunt:
     def __mul__(self, other):
         if type(other) == numbers.Number or type(other) == float or type(other) == int:
             return datapunt(self.get_val()*other, self.get_fout()*other, self.get_naam(), self.get_verdeling())
+        elif type(other) == datapunt:
+            return datapunt(self.get_val()*other.get_val(), np.sqrt(self.get_rel_variance() + other.get_rel_variance()), sp.symbols(str(self.get_naam()) + "*" + str(other.get_naam())))
         else:
-            raise NotImplementedError('multiplication of a datapunt and a non-number object is not implemented')
+            raise NotImplementedError("Foute datatype voor vermenigvuldiging met datapunt object.")
+    
+    def __div__(self, other):
+        if type(other) == numbers.Number or type(other) == float or type(other) == int:
+            return datapunt(self.get_val()/other, self.get_fout()/other, self.get_naam(), self.get_verdeling())
+        elif type(other) == datapunt:
+            return datapunt(self.get_val()/other.get_val(), np.sqrt(self.get_rel_variance() + other.get_rel_variance()), sp.symbols(str(self.get_naam()) + "/" + str(other.get_naam())))
+        else:
+            raise NotImplementedError("Foute datatype voor deling met datapunt object.")
+            
     
 class meting:
     def __init__(self):

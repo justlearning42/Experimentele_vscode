@@ -412,7 +412,7 @@ def fit(parameters, model, initial_vals, x_val, y_val, y_err, bounds = None, soo
                 fouten.append(tuppel)
     outp = []
     for i in range(0, len(parameters)):
-        outp.append([min_param[i], fouten[i], 'S'])
+        outp.append(classes.datapunt(min_param[i], fouten[i], sp.symbols(parameters[i]), 'S'))
     if return_fit_stats:
         outp.append([chi_red, p_waarde])
     return outp
