@@ -146,6 +146,14 @@ def gemiddelde(waarden: list, naam = None):
         terug = [classes.datapunt([avg[i],sigma[i],naam[i]]) for i in range(len(waarden[0]))]
     return terug
 
+def gewogen_gemiddelde(datapunten):
+    '@in: een lijst met datapunten. @out: het gewogen gemiddelde ervan (als datapunt)'
+    waarden = np.array([datapunt.get_val() for datapunt in datapunten])
+    gewichten = np.array([1/datapunt.get_variance() for datapunt in datapunten])
+    waarde = np.sum(waarden*gewichten)/np.sum(gewichten)
+    fout = 1/np.sqrt(np.sum(gewichten))
+    return classes.datapunt(waarde, fout, datapunten[0].get_naam(), 'Normaal') #het zal wel normaal verdeeld zijn, trust bro
+
 def mu_sigma(waarden: list, naam = None):
     """
     Berekent het gewogen gemiddelde van een set data
