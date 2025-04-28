@@ -304,6 +304,9 @@ class datapunt:
         else:
             raise NotImplementedError("Foute datatype voor deling met datapunt object.")
             
+    def __pow__(self, exponent):
+        return datapunt(self.get_val()**exponent, abs(exponent)*self.get_val()**(exponent-1)* self.get_fout(), self.get_naam(), 'Normaal') #nee want het is chi^2 verdeeld of zo maar shhhht
+
     
 class meting:
     def __init__(self):
